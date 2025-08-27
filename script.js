@@ -1,38 +1,37 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- ESTADO GLOBAL Y DATOS ---
     const state = {
-        gameState: { score: 0, language: 'es', theme: 'light', settings: { math: { level: 'easy' }, guessWord: { level: 'easy', theme: 'animales' } }, avatar: { owned: ['stich'], active: 'stich' } },
+        gameState: { 
+            score: 0, 
+            language: 'es', 
+            theme: 'light', 
+            settings: { 
+                math: { level: 'easy' }, 
+                guessWord: { 
+                    level: 'easy', 
+                    theme: 'animales',
+                    // --- NUEVO: Estado para el modo parental ---
+                    parentMode: {
+                        active: false,
+                        words: []
+                    }
+                } 
+            }, 
+            avatar: { owned: ['stich'], active: 'stich' } 
+        },
         shopAvatars: [ { id: 'stich', name: 'Experimento', price: 0, path: 'assets/avatar/stich.png' }, { id: 'shrek', name: 'Ogro', price: 150, path: 'assets/avatar/shrek.png' }, { id: 'balerrinna', name: 'Bailarina', price: 250, path: 'assets/avatar/balerrinna.png' }, { id: 'maincraft', name: 'Steve', price: 400, path: 'assets/avatar/maincraft.png' }, { id: 'tung', name: 'Tipo Duro', price: 600, path: 'assets/avatar/tung.png' }, { id: 'kpop', name: 'Idol K-Pop', price: 1000, path: 'assets/avatar/kpop.png' }, ],
         currentMathAnswer: 0,
         guessWordState: {},
         questionBank: {
             animales: {
-                easy: [
-                    { word: 'DOG', def: { es: 'El mejor amigo del hombre, ladra.', en: 'Man\'s best friend, it barks.' } },
-                    { word: 'CAT', def: { es: 'Un felino doméstico que maúlla.', en: 'A domestic feline that meows.' } },
-                    { word: 'PIG', def: { es: 'Un animal de granja rosa que hace "oinc".', en: 'A pink farm animal that says "oink".' } },
-                ],
-                medium: [
-                    { word: 'TIGER', def: { es: 'Un gran felino naranja con rayas negras.', en: 'A large orange feline with black stripes.' } },
-                    { word: 'HORSE', def: { es: 'Un animal que se monta y relincha.', en: 'An animal that is ridden and neighs.' } },
-                ],
-                hard: [
-                    { word: 'ELEPHANT', def: { es: 'Un mamífero gris muy grande con trompa.', en: 'A very large grey mammal with a trunk.' } },
-                    { word: 'GIRAFFE', def: { es: 'El animal más alto, con un cuello muy largo.', en: 'The tallest animal, with a very long neck.' } },
-                ]
+                easy: [ { word: 'DOG', def: { es: 'El mejor amigo del hombre, ladra.', en: 'Man\'s best friend, it barks.' } }, { word: 'CAT', def: { es: 'Un felino doméstico que maúlla.', en: 'A domestic feline that meows.' } }, { word: 'PIG', def: { es: 'Un animal de granja rosa que hace "oinc".', en: 'A pink farm animal that says "oink".' } }, ],
+                medium: [ { word: 'TIGER', def: { es: 'Un gran felino naranja con rayas negras.', en: 'A large orange feline with black stripes.' } }, { word: 'HORSE', def: { es: 'Un animal que se monta y relincha.', en: 'An animal that is ridden and neighs.' } }, ],
+                hard: [ { word: 'ELEPHANT', def: { es: 'Un mamífero gris muy grande con trompa.', en: 'A very large grey mammal with a trunk.' } }, { word: 'GIRAFFE', def: { es: 'El animal más alto, con un cuello muy largo.', en: 'The tallest animal, with a very long neck.' } }, ]
             },
             comida: {
-                easy: [
-                    { word: 'EGG', def: { es: 'Es blanco por fuera, amarillo por dentro.', en: 'It is white on the outside, yellow on the inside.' } },
-                    { word: 'PAN', def: { es: 'Se usa para hacer bocadillos.', en: 'Used to make sandwiches.'}},
-                ],
-                medium: [
-                    { word: 'APPLE', def: { es: 'Una fruta roja y redonda.', en: 'A red and round fruit.' } },
-                    { word: 'CHEESE', def: { es: 'Un producto lácteo que le encanta a los ratones.', en: 'A dairy product that mice love.' } },
-                ],
-                hard: [
-                    { word: 'SPAGHETTI', def: { es: 'Un tipo de pasta italiana muy larga y fina.', en: 'A type of very long and thin Italian pasta.' } },
-                ]
+                easy: [ { word: 'EGG', def: { es: 'Es blanco por fuera, amarillo por dentro.', en: 'It is white on the outside, yellow on the inside.' } }, { word: 'PAN', def: { es: 'Se usa para hacer bocadillos.', en: 'Used to make sandwiches.'}}, ],
+                medium: [ { word: 'APPLE', def: { es: 'Una fruta roja y redonda.', en: 'A red and round fruit.' } }, { word: 'CHEESE', def: { es: 'Un producto lácteo que le encanta a los ratones.', en: 'A dairy product that mice love.' } }, ],
+                hard: [ { word: 'SPAGHETTI', def: { es: 'Un tipo de pasta italiana muy larga y fina.', en: 'A type of very long and thin Italian pasta.' } }, ]
             },
         },
         uiStrings: {
@@ -69,7 +68,27 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const persistence = {
         save() { localStorage.setItem('valeriaGameState', JSON.stringify(state.gameState)); },
-        load() { const savedState = localStorage.getItem('valeriaGameState'); if (savedState) { const loadedState = JSON.parse(savedState); Object.keys(state.gameState).forEach(key => { if (loadedState[key] !== undefined) { if (typeof state.gameState[key] === 'object' && state.gameState[key] !== null && !Array.isArray(state.gameState[key])) { Object.assign(state.gameState[key], loadedState[key]); } else { state.gameState[key] = loadedState[key]; } } }); } }
+        load() {
+            const savedState = localStorage.getItem('valeriaGameState');
+            if (savedState) {
+                const loadedState = JSON.parse(savedState);
+                // Fusionar estado guardado con el estado por defecto para evitar errores si hay nuevas propiedades
+                Object.keys(state.gameState).forEach(key => {
+                    if (loadedState[key] !== undefined) {
+                        if (typeof state.gameState[key] === 'object' && state.gameState[key] !== null && !Array.isArray(state.gameState[key])) {
+                            // Asegurarse de que los sub-objetos también se fusionen correctamente
+                            Object.assign(state.gameState[key], loadedState[key]);
+                            // Caso especial para guessWord.parentMode para que no se pierda
+                            if (key === 'settings' && loadedState.settings.guessWord.parentMode) {
+                               state.gameState.settings.guessWord.parentMode = loadedState.settings.guessWord.parentMode;
+                            }
+                        } else {
+                            state.gameState[key] = loadedState[key];
+                        }
+                    }
+                });
+            }
+        }
     };
 
     const settings = {
@@ -82,7 +101,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 guessWordLevelSettingBtns: document.querySelectorAll('#guess-word-level-setting .difficulty-btn'),
                 guessWordThemeSettingBtns: document.querySelectorAll('#guess-word-theme-setting .difficulty-btn'),
                 darkModeToggle: document.getElementById('dark-mode-toggle'),
-                langButtons: document.querySelectorAll('.lang-btn')
+                langButtons: document.querySelectorAll('.lang-btn'),
+                // --- NUEVO: Botón modo parental ---
+                parentModeBtn: document.getElementById('parent-mode-btn')
             };
             this.elements.settingsBtn.addEventListener('click', () => this.open());
             this.elements.closeSettingsBtn.addEventListener('click', () => this.close());
@@ -91,6 +112,16 @@ document.addEventListener('DOMContentLoaded', () => {
             this.elements.guessWordThemeSettingBtns.forEach(btn => btn.addEventListener('click', () => this.setGuessWordSetting('theme', btn.dataset.theme)));
             this.elements.darkModeToggle.addEventListener('change', () => this.toggleDarkMode());
             this.elements.langButtons.forEach(btn => btn.addEventListener('click', () => this.setLanguage(btn.dataset.lang)));
+            
+            // --- NUEVO: Evento para el botón parental ---
+            this.elements.parentModeBtn.addEventListener('click', () => {
+                const password = prompt('Introduce la contraseña para acceder al modo parental:');
+                if (password === 'ponchito') {
+                    parentMode.open();
+                } else if (password !== null) {
+                    alert('Contraseña incorrecta.');
+                }
+            });
         },
         open() { this.updateUI(); this.elements.settingsView.classList.remove('hidden'); },
         close() { this.elements.settingsView.classList.add('hidden'); },
@@ -103,43 +134,109 @@ document.addEventListener('DOMContentLoaded', () => {
         updateLangUI() { this.elements.langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === state.gameState.language)); },
         triggerGameRestartIfActive() { const guessWordView = document.getElementById('guess-word-view'); if (guessWordView && !guessWordView.classList.contains('hidden')) { guessWordGame.start(); } }
     };
+    
+    // --- NUEVO: Módulo completo para el modo parental ---
+    const parentMode = {
+        init() {
+            this.elements = {
+                view: document.getElementById('parent-mode-view'),
+                closeBtn: document.getElementById('parent-mode-close-btn'),
+                toggle: document.getElementById('parent-mode-toggle'),
+                addBtn: document.getElementById('parent-mode-add-btn'),
+                wordInput: document.getElementById('parent-mode-word-input'),
+                defEsInput: document.getElementById('parent-mode-def-es-input'),
+                defEnInput: document.getElementById('parent-mode-def-en-input'),
+                wordList: document.getElementById('parent-mode-word-list'),
+            };
+
+            this.elements.closeBtn.addEventListener('click', () => this.close());
+            this.elements.toggle.addEventListener('change', () => this.toggleActivation());
+            this.elements.addBtn.addEventListener('click', () => this.addWord());
+            this.elements.wordList.addEventListener('click', (e) => {
+                if (e.target.classList.contains('delete-word-btn')) {
+                    this.removeWord(e.target.dataset.word);
+                }
+            });
+        },
+        open() {
+            this.render();
+            this.elements.view.classList.remove('hidden');
+        },
+        close() {
+            this.elements.view.classList.add('hidden');
+        },
+        toggleActivation() {
+            state.gameState.settings.guessWord.parentMode.active = this.elements.toggle.checked;
+            persistence.save();
+            this.render(); // Re-render para mostrar el estado
+        },
+        addWord() {
+            const word = this.elements.wordInput.value.trim().toUpperCase();
+            const defEs = this.elements.defEsInput.value.trim();
+            const defEn = this.elements.defEnInput.value.trim();
+
+            if (word && defEs && defEn) {
+                const newWord = {
+                    word: word,
+                    def: { es: defEs, en: defEn }
+                };
+                state.gameState.settings.guessWord.parentMode.words.push(newWord);
+                persistence.save();
+                this.render();
+                // Limpiar inputs
+                this.elements.wordInput.value = '';
+                this.elements.defEsInput.value = '';
+                this.elements.defEnInput.value = '';
+            } else {
+                alert('Por favor, rellena todos los campos para añadir la palabra.');
+            }
+        },
+        removeWord(wordToRemove) {
+            const words = state.gameState.settings.guessWord.parentMode.words;
+            state.gameState.settings.guessWord.parentMode.words = words.filter(w => w.word !== wordToRemove);
+            persistence.save();
+            this.render();
+        },
+        render() {
+            const { active, words } = state.gameState.settings.guessWord.parentMode;
+            this.elements.toggle.checked = active;
+            this.elements.wordList.innerHTML = '';
+
+            if (words.length === 0) {
+                this.elements.wordList.innerHTML = '<p class="small-text">No hay palabras personalizadas todavía.</p>';
+            } else {
+                words.forEach(w => {
+                    const wordEl = document.createElement('div');
+                    wordEl.className = 'parent-word-item';
+                    wordEl.innerHTML = `
+                        <span><strong>${w.word}</strong>: "${w.def.es}"</span>
+                        <button class="delete-word-btn" data-word="${w.word}">&times;</button>
+                    `;
+                    this.elements.wordList.appendChild(wordEl);
+                });
+            }
+        }
+    };
 
     const mathGame = {
         init() {
-            this.elements = {
-                levelDisplay: document.getElementById('current-math-level'),
-                problemText: document.getElementById('math-problem-text'),
-                answerInput: document.getElementById('math-answer-input'),
-                checkBtn: document.getElementById('math-check-btn'),
-                feedbackText: document.getElementById('math-feedback-text')
-            };
+            this.elements = { levelDisplay: document.getElementById('current-math-level'), problemText: document.getElementById('math-problem-text'), answerInput: document.getElementById('math-answer-input'), checkBtn: document.getElementById('math-check-btn'), feedbackText: document.getElementById('math-feedback-text') };
             this.elements.checkBtn.addEventListener('click', () => this.checkAnswer());
-            this.elements.answerInput.addEventListener('keyup', (event) => {
-                if (event.key === 'Enter') this.checkAnswer();
-            });
+            this.elements.answerInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') this.checkAnswer(); });
         },
         start() {
             const level = state.gameState.settings.math.level;
-            // A veces el elemento puede no estar listo si la vista no está visible.
-            // Nos aseguramos de que exista antes de usarlo.
-            if (this.elements.levelDisplay) {
-                this.elements.levelDisplay.textContent = level;
-            }
+            if (this.elements.levelDisplay) { this.elements.levelDisplay.textContent = level; }
             ui.updateAvatar();
             this.generateProblem();
         },
         generateProblem() {
             const level = state.gameState.settings.math.level;
-            this.elements.answerInput.value = '';
-            this.elements.feedbackText.textContent = '';
-            this.elements.answerInput.focus();
-            const ops = ['+', '-'];
-            let maxNum = 10;
-            if (level === 'medium') { ops.push('*'); maxNum = 50; }
-            else if (level === 'hard') { ops.push('*', '/'); maxNum = 100; }
+            this.elements.answerInput.value = ''; this.elements.feedbackText.textContent = ''; this.elements.answerInput.focus();
+            const ops = ['+', '-']; let maxNum = 10;
+            if (level === 'medium') { ops.push('*'); maxNum = 50; } else if (level === 'hard') { ops.push('*', '/'); maxNum = 100; }
             const op = ops[Math.floor(Math.random() * ops.length)];
-            let num1 = Math.floor(Math.random() * maxNum) + 1;
-            let num2 = Math.floor(Math.random() * maxNum) + 1;
+            let num1 = Math.floor(Math.random() * maxNum) + 1; let num2 = Math.floor(Math.random() * maxNum) + 1;
             if (op === '-') { if (num1 < num2) [num1, num2] = [num2, num1]; state.currentMathAnswer = num1 - num2; }
             else if (op === '+') { state.currentMathAnswer = num1 + num2; }
             else if (op === '*') { if (level === 'medium') num2 = Math.floor(Math.random() * 9) + 1; state.currentMathAnswer = num1 * num2; }
@@ -157,21 +254,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const guessWordGame = {
         init() {
-            this.elements = {
-                attempts: document.getElementById('guess-word-attempts'),
-                definition: document.getElementById('guess-word-definition').querySelector('p'),
-                boxes: document.getElementById('guess-word-boxes'),
-                keyboard: document.getElementById('keyboard-container')
-            };
+            this.elements = { attempts: document.getElementById('guess-word-attempts'), definition: document.getElementById('guess-word-definition').querySelector('p'), boxes: document.getElementById('guess-word-boxes'), keyboard: document.getElementById('keyboard-container') };
             this.renderKeyboard();
         },
         start() {
             this.elements.keyboard.querySelectorAll('.key').forEach(k => k.disabled = false);
-            const { level, theme } = state.gameState.settings.guessWord;
+            
             const lang = state.gameState.language;
-            const questionPool = state.questionBank[theme]?.[level];
-            if (!questionPool || questionPool.length === 0) { this.elements.definition.textContent = `No hay preguntas para ${theme}/${level}.`; return; }
+            const { parentMode } = state.gameState.settings.guessWord;
+            let questionPool;
+
+            // --- NUEVO: Comprobar si el modo parental está activo y tiene palabras ---
+            if (parentMode.active && parentMode.words.length > 0) {
+                questionPool = parentMode.words;
+                console.log("Modo Parental Activado. Usando palabras personalizadas.");
+            } else {
+                const { level, theme } = state.gameState.settings.guessWord;
+                questionPool = state.questionBank[theme]?.[level];
+            }
+            
+            if (!questionPool || questionPool.length === 0) {
+                this.elements.definition.textContent = `No hay preguntas disponibles. Pide a un adulto que añada palabras en el modo parental.`;
+                return;
+            }
+
             const question = questionPool[Math.floor(Math.random() * questionPool.length)];
+            
             state.guessWordState = { word: question.word.toUpperCase(), guessedLetters: new Set(), attempts: 6, };
             this.elements.definition.textContent = question.def[lang];
             this.renderBoxes();
@@ -202,46 +310,26 @@ document.addEventListener('DOMContentLoaded', () => {
             persistence.load();
             ui.init();
             settings.init();
-            // === CAMBIO IMPORTANTE: Inicializamos todos los módulos aquí ===
             mathGame.init();
             guessWordGame.init();
             shop.init();
             closet.init();
-            // =============================================================
+            // --- NUEVO: Inicializar el módulo parental ---
+            parentMode.init();
             this.updateFullUI();
             ui.showView('main-menu-view');
         },
         switchView(viewId) {
-            const moduleMap = {
-                'math-challenge-view': mathGame,
-                'guess-word-view': guessWordGame,
-                'shop-view': shop,
-                'closet-view': closet
-            };
+            const moduleMap = { 'math-challenge-view': mathGame, 'guess-word-view': guessWordGame, 'shop-view': shop, 'closet-view': closet };
             const module = moduleMap[viewId];
             if (module) {
-                // === CAMBIO IMPORTANTE: Ya no inicializamos aquí ===
-                if (typeof module.start === 'function') {
-                    module.start();
-                } else if (typeof module.render === 'function') {
-                    module.render();
-                }
-                // =================================================
+                if (typeof module.start === 'function') module.start();
+                else if (typeof module.render === 'function') module.render();
             }
             ui.showView(viewId);
         },
-        updateScore(points) {
-            state.gameState.score = Math.max(0, state.gameState.score + points);
-            ui.updateScore();
-            persistence.save();
-        },
-        updateFullUI() {
-            ui.updateScore();
-            ui.updateAvatar();
-            settings.applyTheme();
-            settings.updateLangUI();
-            ui.updateTexts();
-        }
+        updateScore(points) { state.gameState.score = Math.max(0, state.gameState.score + points); ui.updateScore(); persistence.save(); },
+        updateFullUI() { ui.updateScore(); ui.updateAvatar(); settings.applyTheme(); settings.updateLangUI(); ui.updateTexts(); }
     };
 
     game.init();
