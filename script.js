@@ -15,6 +15,8 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- MÓDULOS DE LÓGICA ---
+    
+    // Módulo de UI: gestiona qué se ve y actualiza elementos comunes
     const ui = {
         init() {
             this.elements = {
@@ -52,12 +54,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const lang = state.gameState.language;
             document.querySelectorAll('[data-i18n-key]').forEach(el => {
                 const key = el.dataset.i18nKey;
-                const targetEl = (el.tagName === 'BUTTON' || el.tagName === 'SPAN') ? el : el.querySelector('span') || el;
+                const targetEl = el.querySelector('span') || el; // Para que funcione en botones con spans dentro
                 if (state.uiStrings[lang][key]) targetEl.innerHTML = state.uiStrings[lang][key];
             });
         }
     };
 
+    // Módulo de Persistencia: guarda y carga el estado del juego
     const persistence = {
         save() { localStorage.setItem('valeriaGameState', JSON.stringify(state.gameState)); },
         load() {
@@ -75,6 +78,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
+    // Módulo de Ajustes
     const settings = {
         init() {
             this.elements = {
@@ -90,8 +94,8 @@ document.addEventListener('DOMContentLoaded', () => {
             this.elements.settingsBtn.addEventListener('click', () => this.open());
             this.elements.closeSettingsBtn.addEventListener('click', () => this.close());
             this.elements.mathLevelSettingBtns.forEach(btn => btn.addEventListener('click', () => this.setMathLevel(btn.dataset.level)));
-            this.elements.guessWordLevelSettingBtns.forEach(btn => btn.addEventListener('click', () => { state.gameState.settings.guessWord.level = btn.dataset.level; persistence.save(); this.updateUI(); }));
-            this.elements.guessWordThemeSettingBtns.forEach(btn => btn.addEventListener('click', () => { state.gameState.settings.guessWord.theme = btn.dataset.theme; persistence.save(); this.updateUI(); }));
+            this.elements.guessWordLevelSettingBtns.forEach(btn => btn.addEventListener('click', () => this.setGuessWordSetting('level', btn.dataset.level)));
+            this.elements.guessWordThemeSettingBtns.forEach(btn => btn.addEventListener('click', () => this.setGuessWordSetting('theme', btn.dataset.theme)));
             this.elements.darkModeToggle.addEventListener('change', () => this.toggleDarkMode());
             this.elements.langButtons.forEach(btn => btn.addEventListener('click', () => this.setLanguage(btn.dataset.lang)));
         },
@@ -112,25 +116,26 @@ document.addEventListener('DOMContentLoaded', () => {
             this.updateLangUI();
             ui.updateTexts();
             persistence.save();
-
+            this.triggerGameRestartIfActive();
+        },
+        setGuessWordSetting(key, value) {
+            state.gameState.settings.guessWord[key] = value;
+            persistence.save();
+            this.updateUI();
+            this.triggerGameRestartIfActive();
+        },
+        updateLangUI() { this.elements.langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === state.gameState.language)); },
+        triggerGameRestartIfActive() {
             const guessWordView = document.getElementById('guess-word-view');
             if (!guessWordView.classList.contains('hidden')) {
                 guessWordGame.start();
             }
-        },
-        updateLangUI() { this.elements.langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === state.gameState.language)); }
+        }
     };
 
+    // Módulo Adivina la Palabra
     const guessWordGame = {
-        init() {
-            this.elements = {
-                attempts: document.getElementById('guess-word-attempts'),
-                definition: document.getElementById('guess-word-definition'),
-                boxes: document.getElementById('guess-word-boxes'),
-                keyboard: document.getElementById('keyboard-container')
-            };
-            this.renderKeyboard();
-        },
+        init() { this.elements = { attempts: document.getElementById('guess-word-attempts'), definition: document.getElementById('guess-word-definition'), boxes: document.getElementById('guess-word-boxes'), keyboard: document.getElementById('keyboard-container') }; this.renderKeyboard(); },
         async start() {
             this.elements.definition.innerHTML = '<p>Contactando con la IA...</p>';
             this.elements.keyboard.querySelectorAll('.key').forEach(k => k.disabled = false);
@@ -138,11 +143,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 this.elements.definition.innerHTML = '<p>Cargando IA de lenguaje (sólo la primera vez)...</p>';
                 try {
                     state.textGenerator = await pipeline('text-generation', 'Xenova/distilgpt2');
-                } catch (error) {
-                    console.error("Error al cargar el modelo de IA:", error);
-                    this.elements.definition.textContent = 'Error: No se pudo cargar el modelo de IA.';
-                    return;
-                }
+                } catch (error) { console.error("Error al cargar el modelo de IA:", error); this.elements.definition.textContent = 'Error: No se pudo cargar el modelo de IA.'; return; }
             }
             const { level, theme } = state.gameState.settings.guessWord;
             const lang = state.gameState.language === 'es' ? 'Spanish' : 'English';
@@ -152,19 +153,26 @@ document.addEventListener('DOMContentLoaded', () => {
             const prompt = `Generate a simple quiz question.\n###\nLanguage: English\nTheme: animals\nLetters: 3\nDefinition: A loyal pet that barks.\nWord: DOG\n###\nLanguage: Spanish\nTheme: comida\nLetters: 5\nDefinition: Una fruta roja y redonda.\nWord: APPLE\n###\nLanguage: ${lang}\nTheme: ${theme}\nLetters: ${numLetters}\nDefinition:`;
             try {
                 const result = await state.textGenerator(prompt, { max_new_tokens: 50 });
-                const rawText = result[0].generated_text;
-                const parts = rawText.split('###');
-                const lastValidPart = parts[parts.length - 1].trim();
-                const definitionMatch = lastValidPart.match(/Definition:(.*?)\nWord:(.*)/s);
-                if (!definitionMatch || !definitionMatch[2]) throw new Error("La IA no devolvió un formato válido.");
-                const definition = definitionMatch[1].trim();
-                const word = definitionMatch[2].trim().toUpperCase().replace(/[^A-Z]/g, '');
-                if (word.length === 0) throw new Error("La IA generó una palabra vacía.");
-                state.guessWordState = { word, guessedLetters: new Set(), attempts: 6 };
-                this.elements.definition.textContent = definition;
+                const parsed = this.parseAIResponse(result[0].generated_text, numLetters);
+                if (!parsed) throw new Error("La IA no devolvió un formato válido tras varios intentos.");
+                state.guessWordState = { word: parsed.word, guessedLetters: new Set(), attempts: 6 };
+                this.elements.definition.textContent = parsed.definition;
                 this.renderBoxes();
                 this.updateAttempts();
             } catch (error) { console.error("Error de la IA:", error); this.elements.definition.textContent = 'Error de la IA. Generando otra pregunta...'; setTimeout(() => this.start(), 2000); }
+        },
+        parseAIResponse(rawText, expectedLength) {
+            const parts = rawText.split('###');
+            const lastPart = parts[parts.length - 1].trim();
+            const definitionMatch = lastPart.match(/Definition:(.*?)\nWord:(.*)/s);
+            if (definitionMatch && definitionMatch[2]) {
+                const word = definitionMatch[2].trim().toUpperCase().replace(/[^A-Z]/g, '');
+                if (word.length >= 3) { // Aceptamos la palabra si tiene al menos 3 letras
+                    return { definition: definitionMatch[1].trim(), word: word };
+                }
+            }
+            console.warn("La IA devolvió una respuesta mal formada:", { rawText });
+            return null;
         },
         renderBoxes() { this.elements.boxes.innerHTML = ''; for (const letter of state.guessWordState.word) { const box = document.createElement('div'); box.className = 'letter-box'; if (state.guessWordState.guessedLetters.has(letter)) box.textContent = letter; this.elements.boxes.appendChild(box); } },
         renderKeyboard() { this.elements.keyboard.innerHTML = ''; 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(letter => { const key = document.createElement('button'); key.className = 'key'; key.textContent = letter; key.addEventListener('click', () => this.handleGuess(letter)); this.elements.keyboard.appendChild(key); }); },
@@ -179,12 +187,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONTROLADOR PRINCIPAL DEL JUEGO ---
     const game = {
-        modules: {
-            'math-challenge-view': mathGame,
-            'guess-word-view': guessWordGame,
-            'shop-view': shop,
-            'closet-view': closet
-        },
         init() {
             persistence.load();
             ui.init();
@@ -193,7 +195,8 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.showView('main-menu-view');
         },
         switchView(viewId) {
-            const module = this.modules[viewId];
+            const moduleMap = { 'math-challenge-view': mathGame, 'guess-word-view': guessWordGame, 'shop-view': shop, 'closet-view': closet };
+            const module = moduleMap[viewId];
             if (module) {
                 if (!module.isInitialized) {
                     module.init();
