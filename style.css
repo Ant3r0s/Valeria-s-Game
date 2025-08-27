@@ -151,3 +151,127 @@ body {
 }
 .feedback-text.correct { color: var(--secondary-green); }
 .feedback-text.incorrect { color: var(--red-error); }
+
+/* --- AÑADIR ESTO AL FINAL DEL CSS --- */
+
+.header-controls {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.settings-btn {
+    font-size: 1.8rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+    transition: transform 0.2s ease;
+}
+.settings-btn:hover {
+    transform: rotate(45deg);
+}
+
+/* --- Estilos del Modal --- */
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    padding: 2rem;
+    border-radius: 20px;
+    box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+    width: 90%;
+    max-width: 500px;
+    position: relative;
+}
+
+.close-button {
+    position: absolute;
+    top: 15px;
+    right: 20px;
+    font-size: 2rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.settings-section {
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--light-gray);
+}
+.settings-section:last-child { border-bottom: none; margin-bottom: 0; }
+.settings-section.disabled { opacity: 0.5; }
+
+.difficulty-display {
+    text-align: center;
+    font-size: 1.1rem;
+    margin-top: -1rem;
+    margin-bottom: 2rem;
+    color: #888;
+}
+#current-math-level {
+    font-weight: bold;
+    color: var(--primary-blue);
+}
+
+/* --- Reutilizamos y ajustamos estilos --- */
+.difficulty-buttons { display: flex; gap: 1rem; justify-content: center; }
+.difficulty-btn.active {
+    background-color: var(--secondary-green);
+    box-shadow: 0 0 10px rgba(46, 204, 113, 0.5);
+}
+
+/* El resto de la vista del menú principal (sin cambios) */
+#main-menu-view .game-selection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+#main-menu-view .game-card {
+    background-color: var(--light-gray);
+    border: none;
+    border-radius: 15px;
+    padding: 2rem;
+    font-family: var(--font-family);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+#main-menu-view .game-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    background-color: var(--secondary-green);
+    color: #fff;
+}
+
+#main-menu-view .game-card.disabled {
+    background-color: #e0e0e0;
+    cursor: not-allowed;
+    opacity: 0.6;
+}
+
+#main-menu-view .game-card.disabled:hover { 
+    transform: none; 
+    box-shadow: none; 
+    background-color: #e0e0e0; 
+    color: #333;
+}
+
+#main-menu-view .game-icon { display: block; font-size: 3rem; margin-bottom: 1rem; }
+#main-menu-view .game-title { font-size: 1.2rem; font-weight: 600; }
+#main-menu-view .game-status { display: block; font-size: 0.8rem; margin-top: 0.5rem; }
