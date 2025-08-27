@@ -5,7 +5,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const state = {
         gameState: { score: 0, language: 'es', theme: 'light', settings: { math: { level: 'easy' }, guessWord: { level: 'easy', theme: 'animales' } }, avatar: { owned: ['stich'], active: 'stich' } },
         shopAvatars: [ { id: 'stich', name: 'Experimento', price: 0, path: 'assets/avatar/stich.png' }, { id: 'shrek', name: 'Ogro', price: 150, path: 'assets/avatar/shrek.png' }, { id: 'balerrinna', name: 'Bailarina', price: 250, path: 'assets/avatar/balerrinna.png' }, { id: 'maincraft', name: 'Steve', price: 400, path: 'assets/avatar/maincraft.png' }, { id: 'tung', name: 'Tipo Duro', price: 600, path: 'assets/avatar/tung.png' }, { id: 'kpop', name: 'Idol K-Pop', price: 1000, path: 'assets/avatar/kpop.png' }, ],
-        currentMathAnswer: 0, guessWordState: {}, textGenerator: null,
+        currentMathAnswer: 0,
+        guessWordState: {},
+        textGenerator: null,
         uiStrings: {
             es: { points: "Puntos:", main_title: "El Nuevo Juego de Valeria", menu_games_title: "Juegos", menu_extras_title: "Extras", game_math: "Reto Matemático", game_guess_word: "Adivina la Palabra", game_shop: "Tienda", game_closet: "Mi Colección", back_button: "&larr; Volver", attempts_left: "Intentos restantes:", settings_title: "⚙️ Ajustes", settings_appearance: "Apariencia", settings_dark_mode: "Modo Oscuro", settings_select_difficulty: "Dificultad:", settings_easy: "Fácil", settings_medium: "Medio", settings_hard: "Difícil", settings_select_theme: "Tema:", check_answer: "Comprobar", current_difficulty: "Dificultad:", closet_subtitle: "Selecciona tu avatar activo" },
             en: { points: "Points:", main_title: "Valeria's New Game", menu_games_title: "Games", menu_extras_title: "Extras", game_math: "Math Challenge", game_guess_word: "Guess the Word", game_shop: "Shop", game_closet: "My Collection", back_button: "&larr; Back", attempts_left: "Attempts left:", settings_title: "⚙️ Settings", settings_appearance: "Appearance", settings_dark_mode: "Dark Mode", settings_select_difficulty: "Difficulty:", settings_easy: "Easy", settings_medium: "Medium", settings_hard: "Hard", settings_select_theme: "Theme:", check_answer: "Check", current_difficulty: "Difficulty:", closet_subtitle: "Select your active avatar" }
@@ -50,7 +52,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const lang = state.gameState.language;
             document.querySelectorAll('[data-i18n-key]').forEach(el => {
                 const key = el.dataset.i18nKey;
-                if (state.uiStrings[lang][key]) el.innerHTML = state.uiStrings[lang][key];
+                const targetEl = el.querySelector('span') || el;
+                if (state.uiStrings[lang][key]) targetEl.innerHTML = state.uiStrings[lang][key];
             });
         }
     };
@@ -65,9 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     if (loadedState[key] !== undefined) {
                         if (typeof state.gameState[key] === 'object' && state.gameState[key] !== null && !Array.isArray(state.gameState[key])) {
                             Object.assign(state.gameState[key], loadedState[key]);
-                        } else {
-                            state.gameState[key] = loadedState[key];
-                        }
+                        } else { state.gameState[key] = loadedState[key]; }
                     }
                 });
             }
@@ -127,11 +128,20 @@ document.addEventListener('DOMContentLoaded', () => {
             const prompt = `Generate a simple quiz question.\n###\nLanguage: English\nTheme: animals\nLetters: 3\nDefinition: A loyal pet that barks.\nWord: DOG\n###\nLanguage: Spanish\nTheme: comida\nLetters: 5\nDefinition: Una fruta roja y redonda.\nWord: APPLE\n###\nLanguage: ${lang}\nTheme: ${theme}\nLetters: ${numLetters}\nDefinition:`;
             try {
                 const result = await state.textGenerator(prompt, { max_new_tokens: 50 });
-                const generatedText = result[0].generated_text.split('###').pop().trim();
-                const definitionMatch = generatedText.match(/Definition:(.*?)\nWord:(.*)/s);
-                if (!definitionMatch) throw new Error("La IA no devolvió un formato válido.");
-                state.guessWordState = { word: definitionMatch[2].trim().toUpperCase(), guessedLetters: new Set(), attempts: 6 };
-                this.elements.definition.textContent = definitionMatch[1].trim();
+                const rawText = result[0].generated_text;
+                const parts = rawText.split('###');
+                const lastPart = parts[parts.length - 1].trim();
+                const definitionMatch = lastPart.match(/Definition:(.*?)\nWord:(.*)/s);
+
+                if (!definitionMatch || !definitionMatch[2]) throw new Error("La IA no devolvió un formato válido.");
+                
+                const word = definitionMatch[2].trim().toUpperCase().replace(/[^A-Z]/g, '');
+                const definition = definitionMatch[1].trim();
+
+                if (word.length === 0) throw new Error("La IA generó una palabra vacía.");
+
+                state.guessWordState = { word, guessedLetters: new Set(), attempts: 6 };
+                this.elements.definition.textContent = definition;
                 this.renderBoxes();
                 this.updateAttempts();
             } catch (error) { console.error("Error de la IA:", error); this.elements.definition.textContent = 'Error de la IA. Inténtalo de nuevo.'; }
