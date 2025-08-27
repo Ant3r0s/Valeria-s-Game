@@ -3,21 +3,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameState = {
         score: 0,
         language: 'es',
-        theme: 'light', // 'light' o 'dark'
-        settings: {
-            math: { level: 'easy' },
-        },
-        avatar: { items: [] },
+        theme: 'light',
+        settings: { math: { level: 'easy' } },
+        avatar: {
+            owned: ['stich'], // Stitch es el avatar inicial que ya se posee
+            active: 'stich',   // Stitch es el avatar equipado por defecto
+        }
     };
 
-    // Base de datos de la tienda - ¡Nuevos Items!
-    const shopItems = [
-        { id: 'hat_1', name: 'Gorra', price: 50, icon: '🧢', type: 'hat' },
-        { id: 'glasses_1', name: 'Gafas de Sol', price: 75, icon: '😎', type: 'glasses' },
-        { id: 'mustache_1', name: 'Bigote', price: 100, icon: '〰️', type: 'feature' }, // Usamos un icono más adecuado
-        { id: 'crown_1', name: 'Corona', price: 500, icon: '👑', type: 'hat' },
-        { id: 'shirt_1', name: 'Camiseta', price: 120, icon: '👕', type: 'shirt' },
-        { id: 'shoes_1', name: 'Zapatillas', price: 90, icon: '👟', type: 'shoes' },
+    // Base de datos de la tienda - ¡ACTUALIZADA CON TUS PNGS Y PRECIOS!
+    const shopAvatars = [
+        { id: 'stich', name: 'Experimento', price: 0, path: 'assets/avatar/stich.png' },
+        { id: 'shrek', name: 'Ogro del Pantano', price: 150, path: 'assets/avatar/shrek.png' },
+        { id: 'balerrinna', name: 'Bailarina', price: 250, path: 'assets/avatar/balerrinna.png' },
+        { id: 'maincraft', name: 'Steve', price: 400, path: 'assets/avatar/maincraft.png' },
+        { id: 'tung', name: 'Tipo Duro', price: 600, path: 'assets/avatar/tung.png' },
+        { id: 'kpop', name: 'Idol K-Pop', price: 1000, path: 'assets/avatar/kpop.png' },
     ];
 
     // --- REFERENCIAS A ELEMENTOS DEL DOM ---
@@ -26,37 +27,28 @@ document.addEventListener('DOMContentLoaded', () => {
     const langButtons = document.querySelectorAll('.lang-btn');
     const gameCards = document.querySelectorAll('#main-menu-view .game-card');
     const backButtons = document.querySelectorAll('.back-button');
-    const avatarPreviewHeader = document.getElementById('avatar-preview-header');
-    const avatarPreviewMath = document.getElementById('avatar-preview-math'); // Nuevo: avatar en el juego de mates
-    
+    const headerAvatarImg = document.getElementById('header-avatar-img');
+    const mathAvatarImg = document.getElementById('math-avatar-img');
     const settingsBtn = document.getElementById('settings-btn');
     const settingsView = document.getElementById('settings-view');
     const closeSettingsBtn = document.querySelector('#settings-view .close-button');
     const mathLevelSettingBtns = document.querySelectorAll('#math-level-setting .difficulty-btn');
     const darkModeToggle = document.getElementById('dark-mode-toggle');
-
     const currentMathLevelEl = document.getElementById('current-math-level');
     const mathProblemTextEl = document.getElementById('math-problem-text');
     const mathAnswerInputEl = document.getElementById('math-answer-input');
     const mathCheckBtn = document.getElementById('math-check-btn');
     const mathFeedbackTextEl = document.getElementById('math-feedback-text');
     let currentMathAnswer = 0;
-
     const shopItemsGrid = document.getElementById('shop-items-grid');
+    const closetItemsGrid = document.getElementById('closet-items-grid');
 
     // --- GESTIÓN DE VISTAS Y NAVEGACIÓN ---
     function showView(viewId) {
         views.forEach(view => {
-            if (!view.classList.contains('modal')) {
-                view.classList.add('hidden');
-            }
+            if (!view.classList.contains('modal')) view.classList.add('hidden');
         });
-        const targetView = document.getElementById(viewId);
-        if (targetView) {
-            targetView.classList.remove('hidden');
-        } else {
-            console.error(`Vista no encontrada: ${viewId}`);
-        }
+        document.getElementById(viewId).classList.remove('hidden');
     }
 
     gameCards.forEach(card => {
@@ -65,6 +57,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 const gameId = card.dataset.game;
                 if (gameId === 'math-challenge') startGameMath();
                 if (gameId === 'shop') renderShop();
+                if (gameId === 'closet') renderCloset();
                 showView(`${gameId}-view`);
             });
         }
@@ -74,113 +67,85 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', () => showView('main-menu-view'));
     });
 
-    // --- LÓGICA DE AJUSTES ---
-    settingsBtn.addEventListener('click', () => {
-        updateSettingsUI();
-        settingsView.classList.remove('hidden');
-    });
-    closeSettingsBtn.addEventListener('click', () => settingsView.classList.add('hidden'));
-
-    function updateSettingsUI() {
-        // Actualizar selección de nivel de matemáticas
-        const currentMathLevel = gameState.settings.math.level;
-        mathLevelSettingBtns.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.level === currentMathLevel);
-        });
-        // Actualizar interruptor de modo oscuro
-        darkModeToggle.checked = gameState.theme === 'dark';
-    }
-
-    mathLevelSettingBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            gameState.settings.math.level = btn.dataset.level;
-            saveState();
-            updateSettingsUI();
-        });
-    });
-
-    darkModeToggle.addEventListener('change', () => {
-        gameState.theme = darkModeToggle.checked ? 'dark' : 'light';
-        applyTheme();
-        saveState();
-    });
-
-    function applyTheme() {
-        document.body.classList.toggle('dark-mode', gameState.theme === 'dark');
-    }
-
-    // --- LÓGICA DE LA TIENDA Y AVATAR ---
+    // --- LÓGICA DE TIENDA, ARMARIO Y AVATAR ---
     function renderShop() {
         shopItemsGrid.innerHTML = '';
-        shopItems.forEach(item => {
-            const owned = gameState.avatar.items.includes(item.id);
-            const canAfford = gameState.score >= item.price;
+        shopAvatars.forEach(avatar => {
+            if (avatar.price === 0) return;
+            const owned = gameState.avatar.owned.includes(avatar.id);
+            const canAfford = gameState.score >= avatar.price;
             const itemEl = document.createElement('div');
             itemEl.className = 'shop-item';
             itemEl.innerHTML = `
-                <div class="shop-item-icon">${item.icon}</div>
-                <div class="shop-item-name">${item.name}</div>
-                <div class="shop-item-price">${item.price} 🪙</div>
-                <button class="buy-btn" data-item-id="${item.id}" ${owned || !canAfford ? 'disabled' : ''}>
-                    ${owned ? 'Comprado' : 'Comprar'}
+                <div class="shop-item-icon"><img src="${avatar.path}" alt="${avatar.name}"></div>
+                <div class="shop-item-name">${avatar.name}</div>
+                <div class="shop-item-price">${avatar.price} 🪙</div>
+                <button class="buy-btn" data-item-id="${avatar.id}" ${owned || !canAfford ? 'disabled' : ''}>
+                    ${owned ? 'Adquirido' : 'Comprar'}
                 </button>
             `;
             shopItemsGrid.appendChild(itemEl);
         });
     }
+
     shopItemsGrid.addEventListener('click', (event) => {
         if (event.target.classList.contains('buy-btn')) {
-            const itemId = event.target.dataset.itemId;
-            buyItem(itemId);
+            buyAvatar(event.target.dataset.itemId);
         }
     });
-    function buyItem(itemId) {
-        const item = shopItems.find(i => i.id === itemId);
-        if (!item || gameState.avatar.items.includes(itemId) || gameState.score < item.price) return;
-        updateScore(-item.price);
-        gameState.avatar.items.push(itemId);
+
+    function buyAvatar(avatarId) {
+        const avatar = shopAvatars.find(a => a.id === avatarId);
+        if (!avatar || gameState.avatar.owned.includes(avatarId) || gameState.score < avatar.price) return;
+        updateScore(-avatar.price);
+        gameState.avatar.owned.push(avatarId);
+        gameState.avatar.active = avatarId;
         saveState();
         renderShop();
-        renderAvatar(); // Actualizar avatar en el header
-        renderAvatarInGame(); // Actualizar avatar en el juego de mates (si está visible)
+        renderAvatar();
     }
 
-    // Renderiza el avatar en la cabecera (pequeño)
+    function renderCloset() {
+        closetItemsGrid.innerHTML = '';
+        gameState.avatar.owned.forEach(avatarId => {
+            const avatar = shopAvatars.find(a => a.id === avatarId);
+            const isActive = gameState.avatar.active === avatarId;
+            const itemEl = document.createElement('div');
+            itemEl.className = `shop-item ${isActive ? 'active' : ''}`;
+            itemEl.innerHTML = `
+                <div class="shop-item-icon"><img src="${avatar.path}" alt="${avatar.name}"></div>
+                <div class="shop-item-name">${avatar.name}</div>
+                <button class="equip-btn" data-item-id="${avatar.id}" ${isActive ? 'disabled' : ''}>
+                    ${isActive ? 'Seleccionado' : 'Seleccionar'}
+                </button>
+            `;
+            closetItemsGrid.appendChild(itemEl);
+        });
+    }
+
+    closetItemsGrid.addEventListener('click', (event) => {
+        if (event.target.classList.contains('equip-btn')) {
+            setActiveAvatar(event.target.dataset.itemId);
+        }
+    });
+
+    function setActiveAvatar(avatarId) {
+        gameState.avatar.active = avatarId;
+        saveState();
+        renderCloset();
+        renderAvatar();
+    }
+
     function renderAvatar() {
-        avatarPreviewHeader.querySelectorAll('.avatar-item-preview').forEach(el => el.remove());
-        gameState.avatar.items.forEach(itemId => {
-            const item = shopItems.find(i => i.id === itemId);
-            if (item) {
-                const itemEl = document.createElement('div');
-                itemEl.className = `avatar-item-preview item-${item.type}`;
-                itemEl.textContent = item.icon; // Usamos el icono directamente
-                avatarPreviewHeader.appendChild(itemEl);
-            }
-        });
+        const activeAvatar = shopAvatars.find(a => a.id === gameState.avatar.active);
+        if (activeAvatar) {
+            headerAvatarImg.src = activeAvatar.path;
+            mathAvatarImg.src = activeAvatar.path;
+        }
     }
-
-    // Renderiza el avatar en el área de juego (más grande)
-    function renderAvatarInGame() {
-        // Limpiar items anteriores (excepto la base)
-        avatarPreviewMath.querySelectorAll('.avatar-item-preview').forEach(el => el.remove());
-        
-        gameState.avatar.items.forEach(itemId => {
-            const item = shopItems.find(i => i.id === itemId);
-            if (item) {
-                const itemEl = document.createElement('div');
-                itemEl.className = `avatar-item-preview item-${item.type}`; // Clases de tipo para CSS
-                itemEl.textContent = item.icon;
-                avatarPreviewMath.appendChild(itemEl);
-            }
-        });
-    }
-
 
     // --- GUARDADO Y CARGA DE DATOS ---
-    function saveState() {
-        localStorage.setItem('valeriaGameState', JSON.stringify(gameState));
-    }
-
+    function saveState() { localStorage.setItem('valeriaGameState', JSON.stringify(gameState)); }
     function loadState() {
         const savedState = localStorage.getItem('valeriaGameState');
         if (savedState) {
@@ -188,88 +153,63 @@ document.addEventListener('DOMContentLoaded', () => {
             gameState.score = loadedState.score || 0;
             gameState.language = loadedState.language || 'es';
             gameState.theme = loadedState.theme || 'light';
-            if (loadedState.settings) {
-                if (loadedState.settings.math) gameState.settings.math = loadedState.settings.math;
-            }
-            if (loadedState.avatar) gameState.avatar = loadedState.avatar;
+            if (loadedState.settings) gameState.settings = loadedState.settings;
+            gameState.avatar = loadedState.avatar || { owned: ['stich'], active: 'stich' };
+            gameState.avatar.owned = gameState.avatar.owned || ['stich'];
+            gameState.avatar.active = gameState.avatar.active || 'stich';
         }
         updateUI();
         applyTheme();
     }
-    
     function updateUI() {
         scoreValueEl.textContent = gameState.score;
-        langButtons.forEach(btn => {
-            btn.classList.toggle('active', btn.dataset.lang === gameState.language);
-        });
-        renderAvatar(); // Siempre renderizar el del header
-        // Si estamos en la vista de juego de mates, también renderizar el grande
-        if (!document.getElementById('math-challenge-view').classList.contains('hidden')) {
-            renderAvatarInGame();
-        }
+        renderAvatar();
     }
+    
+    // --- LÓGICA DE AJUSTES ---
+    settingsBtn.addEventListener('click', () => { updateSettingsUI(); settingsView.classList.remove('hidden'); });
+    closeSettingsBtn.addEventListener('click', () => settingsView.classList.add('hidden'));
+    function updateSettingsUI() {
+        const currentMathLevel = gameState.settings.math.level;
+        mathLevelSettingBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.level === currentMathLevel);
+        });
+        darkModeToggle.checked = gameState.theme === 'dark';
+    }
+    mathLevelSettingBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            gameState.settings.math.level = btn.dataset.level;
+            saveState();
+            updateSettingsUI();
+        });
+    });
+    darkModeToggle.addEventListener('change', () => {
+        gameState.theme = darkModeToggle.checked ? 'dark' : 'light';
+        applyTheme();
+        saveState();
+    });
+    function applyTheme() { document.body.classList.toggle('dark-mode', gameState.theme === 'dark'); }
 
     // --- LÓGICA DEL JUEGO DE MATEMÁTICAS ---
     function startGameMath() {
         const level = gameState.settings.math.level;
         currentMathLevelEl.textContent = level.charAt(0).toUpperCase() + level.slice(1);
-        renderAvatarInGame(); // Asegurarnos de que el avatar se renderice al iniciar el juego
+        renderAvatar();
         generateMathProblem();
     }
-    function generateMathProblem() {
-        const level = gameState.settings.math.level;
-        mathAnswerInputEl.value = '';
-        mathFeedbackTextEl.textContent = '';
-        mathAnswerInputEl.focus();
-        const ops = ['+', '-'];
-        let maxNum = 10;
-        if (level === 'medium') { ops.push('*'); maxNum = 50; }
-        else if (level === 'hard') { ops.push('*', '/'); maxNum = 100; }
-        const op = ops[Math.floor(Math.random() * ops.length)];
-        let num1 = Math.floor(Math.random() * maxNum) + 1;
-        let num2 = Math.floor(Math.random() * maxNum) + 1;
-        if (op === '-') { if (num1 < num2) [num1, num2] = [num2, num1]; currentMathAnswer = num1 - num2; }
-        else if (op === '+') { currentMathAnswer = num1 + num2; }
-        else if (op === '*') { if (level === 'medium') num2 = Math.floor(Math.random() * 9) + 1; currentMathAnswer = num1 * num2; }
-        else if (op === '/') { num2 = Math.floor(Math.random() * 9) + 2; num1 = num2 * (Math.floor(Math.random() * (maxNum / num2)) + 1); currentMathAnswer = num1 / num2; }
-        mathProblemTextEl.textContent = `${num1} ${op} ${num2} = ?`;
-    }
-    function checkMathAnswer() {
-        const userAnswer = parseInt(mathAnswerInputEl.value);
-        if (isNaN(userAnswer)) { // Validar que la respuesta sea un número
-            mathFeedbackTextEl.textContent = '¡Introduce un número!';
-            mathFeedbackTextEl.className = 'feedback-text incorrect';
-            return;
-        }
-        if (userAnswer === currentMathAnswer) {
-            mathFeedbackTextEl.textContent = '¡Correcto!';
-            mathFeedbackTextEl.className = 'feedback-text correct';
-            updateScore(10);
-        } else {
-            mathFeedbackTextEl.textContent = `¡Casi! La respuesta era ${currentMathAnswer}`;
-            mathFeedbackTextEl.className = 'feedback-text incorrect';
-            updateScore(-5);
-        }
-        setTimeout(generateMathProblem, 1500);
-    }
+    function generateMathProblem() { const level = gameState.settings.math.level; mathAnswerInputEl.value = ''; mathFeedbackTextEl.textContent = ''; mathAnswerInputEl.focus(); const ops = ['+', '-']; let maxNum = 10; if (level === 'medium') { ops.push('*'); maxNum = 50; } else if (level === 'hard') { ops.push('*', '/'); maxNum = 100; } const op = ops[Math.floor(Math.random() * ops.length)]; let num1 = Math.floor(Math.random() * maxNum) + 1; let num2 = Math.floor(Math.random() * maxNum) + 1; if (op === '-') { if (num1 < num2) [num1, num2] = [num2, num1]; currentMathAnswer = num1 - num2; } else if (op === '+') { currentMathAnswer = num1 + num2; } else if (op === '*') { if (level === 'medium') num2 = Math.floor(Math.random() * 9) + 1; currentMathAnswer = num1 * num2; } else if (op === '/') { num2 = Math.floor(Math.random() * 9) + 2; num1 = num2 * (Math.floor(Math.random() * (maxNum / num2)) + 1); currentMathAnswer = num1 / num2; } mathProblemTextEl.textContent = `${num1} ${op} ${num2} = ?`; }
+    function checkMathAnswer() { const userAnswer = parseInt(mathAnswerInputEl.value); if (isNaN(userAnswer)) { mathFeedbackTextEl.textContent = '¡Introduce un número!'; mathFeedbackTextEl.className = 'feedback-text incorrect'; return; } if (userAnswer === currentMathAnswer) { mathFeedbackTextEl.textContent = '¡Correcto!'; mathFeedbackTextEl.className = 'feedback-text correct'; updateScore(10); } else { mathFeedbackTextEl.textContent = `¡Casi! La respuesta era ${currentMathAnswer}`; mathFeedbackTextEl.className = 'feedback-text incorrect'; updateScore(-5); } setTimeout(generateMathProblem, 1500); }
     mathCheckBtn.addEventListener('click', checkMathAnswer);
-    mathAnswerInputEl.addEventListener('keyup', (event) => {
-        if (event.key === 'Enter') checkMathAnswer();
-    });
+    mathAnswerInputEl.addEventListener('keyup', (event) => { if (event.key === 'Enter') checkMathAnswer(); });
     
     // --- OTRAS FUNCIONES ---
-    langButtons.forEach(button => { button.addEventListener('click', () => { gameState.language = button.dataset.lang; updateUI(); saveState(); }); });
-    function updateScore(points) {
-        gameState.score = Math.max(0, gameState.score + points);
-        scoreValueEl.textContent = gameState.score;
-        saveState();
-    }
+    langButtons.forEach(button => { button.addEventListener('click', () => { gameState.language = button.dataset.lang; langButtons.forEach(btn => btn.classList.remove('active')); button.classList.add('active'); saveState(); }); });
+    function updateScore(points) { gameState.score = Math.max(0, gameState.score + points); scoreValueEl.textContent = gameState.score; saveState(); }
     
     // --- INICIALIZACIÓN ---
     function init() {
         loadState();
         showView('main-menu-view');
     }
-
     init();
 });
