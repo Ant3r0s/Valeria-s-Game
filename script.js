@@ -3,19 +3,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameState = {
         score: 0,
         language: 'es',
+        theme: 'light', // 'light' o 'dark'
         settings: {
             math: { level: 'easy' },
         },
-        avatar: {
-            items: [], // IDs de los items comprados
-        }
+        avatar: { items: [] },
     };
 
-    // Base de datos de la tienda
     const shopItems = [
         { id: 'hat_1', name: 'Gorra', price: 50, icon: '🧢', type: 'hat' },
         { id: 'glasses_1', name: 'Gafas de Sol', price: 75, icon: '😎', type: 'glasses' },
-        { id: 'mustache_1', name: 'Bigote', price: 100, icon: '👨🏻', type: 'feature' }, // Lo trataremos con CSS
+        { id: 'mustache_1', name: 'Bigote', price: 100, icon: '👨🏻', type: 'feature' },
         { id: 'crown_1', name: 'Corona', price: 500, icon: '👑', type: 'hat' },
     ];
 
@@ -31,6 +29,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const settingsView = document.getElementById('settings-view');
     const closeSettingsBtn = document.querySelector('#settings-view .close-button');
     const mathLevelSettingBtns = document.querySelectorAll('#math-level-setting .difficulty-btn');
+    const darkModeToggle = document.getElementById('dark-mode-toggle');
 
     const currentMathLevelEl = document.getElementById('current-math-level');
     const mathProblemTextEl = document.getElementById('math-problem-text');
@@ -76,13 +75,16 @@ document.addEventListener('DOMContentLoaded', () => {
         updateSettingsUI();
         settingsView.classList.remove('hidden');
     });
-    closeSettingsBtn.addEventListener('click', () => settingsView.classList.add('hidden');
+    closeSettingsBtn.addEventListener('click', () => settingsView.classList.add('hidden'));
 
     function updateSettingsUI() {
+        // Actualizar selección de nivel de matemáticas
         const currentMathLevel = gameState.settings.math.level;
         mathLevelSettingBtns.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.level === currentMathLevel);
         });
+        // Actualizar interruptor de modo oscuro
+        darkModeToggle.checked = gameState.theme === 'dark';
     }
 
     mathLevelSettingBtns.forEach(btn => {
@@ -93,13 +95,23 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    darkModeToggle.addEventListener('change', () => {
+        gameState.theme = darkModeToggle.checked ? 'dark' : 'light';
+        applyTheme();
+        saveState();
+    });
+
+    function applyTheme() {
+        document.body.classList.toggle('dark-mode', gameState.theme === 'dark');
+    }
+
     // --- LÓGICA DE LA TIENDA Y AVATAR ---
+    // (Sin cambios, es la misma lógica que ya funcionaba)
     function renderShop() {
         shopItemsGrid.innerHTML = '';
         shopItems.forEach(item => {
             const owned = gameState.avatar.items.includes(item.id);
             const canAfford = gameState.score >= item.price;
-
             const itemEl = document.createElement('div');
             itemEl.className = 'shop-item';
             itemEl.innerHTML = `
@@ -113,49 +125,35 @@ document.addEventListener('DOMContentLoaded', () => {
             shopItemsGrid.appendChild(itemEl);
         });
     }
-    
-    // Event listener para los botones de compra (usando delegación)
     shopItemsGrid.addEventListener('click', (event) => {
         if (event.target.classList.contains('buy-btn')) {
             const itemId = event.target.dataset.itemId;
             buyItem(itemId);
         }
     });
-
     function buyItem(itemId) {
         const item = shopItems.find(i => i.id === itemId);
-        if (!item || gameState.avatar.items.includes(itemId) || gameState.score < item.price) {
-            return; // No hacer nada si ya se tiene, no existe, o no hay dinero
-        }
+        if (!item || gameState.avatar.items.includes(itemId) || gameState.score < item.price) return;
         updateScore(-item.price);
         gameState.avatar.items.push(itemId);
         saveState();
-        renderShop(); // Re-renderizar la tienda para actualizar estado de botones
-        renderAvatar(); // Re-renderizar el avatar
+        renderShop();
+        renderAvatar();
+    }
+    function renderAvatar() {
+        avatarPreviewHeader.querySelectorAll('.avatar-item-preview').forEach(el => el.remove());
+        gameState.avatar.items.forEach(itemId => {
+            const item = shopItems.find(i => i.id === itemId);
+            if (item) {
+                const itemEl = document.createElement('div');
+                itemEl.className = `avatar-item-preview item-${item.type}`;
+                itemEl.textContent = (item.id === 'mustache_1') ? '〰️' : item.icon;
+                if (item.id === 'mustache_1') itemEl.style.fontSize = '1.2rem';
+                avatarPreviewHeader.appendChild(itemEl);
+            }
+        });
     }
 
-    function renderAvatar() {
-    // Limpiar items anteriores (excepto la base)
-    avatarPreviewHeader.querySelectorAll('.avatar-item-preview').forEach(el => el.remove());
-    
-    gameState.avatar.items.forEach(itemId => {
-        const item = shopItems.find(i => i.id === itemId);
-        if (item) {
-            const itemEl = document.createElement('div');
-            // Añadimos una clase general y una específica para el tipo de item
-            itemEl.className = `avatar-item-preview item-${item.type}`;
-            itemEl.textContent = item.icon;
-            
-            // Un pequeño truco para aislar el bigote del emoji 👨🏻
-            if (item.id === 'mustache_1') {
-                itemEl.textContent = '〰️'; // Usamos un bigote de texto o un SVG si quisiéramos
-                itemEl.style.fontSize = '1.2rem'; // Ajustamos tamaño
-            }
-
-            avatarPreviewHeader.appendChild(itemEl);
-        }
-    });
-}
 
     // --- GUARDADO Y CARGA DE DATOS ---
     function saveState() {
@@ -166,13 +164,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedState = localStorage.getItem('valeriaGameState');
         if (savedState) {
             const loadedState = JSON.parse(savedState);
-            // Hacemos un merge cuidadoso
+            // Hacemos un merge cuidadoso para no perder nuevas propiedades en el futuro
             gameState.score = loadedState.score || 0;
             gameState.language = loadedState.language || 'es';
+            gameState.theme = loadedState.theme || 'light'; // Cargar tema
             if (loadedState.settings) gameState.settings = loadedState.settings;
             if (loadedState.avatar) gameState.avatar = loadedState.avatar;
         }
         updateUI();
+        applyTheme(); // Aplicar tema al cargar
     }
     
     function updateUI() {
@@ -189,9 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
         currentMathLevelEl.textContent = level.charAt(0).toUpperCase() + level.slice(1);
         generateMathProblem();
     }
-
     function generateMathProblem() {
-        // (El código de esta función es idéntico al de la respuesta anterior)
         const level = gameState.settings.math.level;
         mathAnswerInputEl.value = '';
         mathFeedbackTextEl.textContent = '';
@@ -209,7 +207,6 @@ document.addEventListener('DOMContentLoaded', () => {
         else if (op === '/') { num2 = Math.floor(Math.random() * 9) + 2; num1 = num2 * (Math.floor(Math.random() * (maxNum / num2)) + 1); currentMathAnswer = num1 / num2; }
         mathProblemTextEl.textContent = `${num1} ${op} ${num2} = ?`;
     }
-
     function checkMathAnswer() {
         const userAnswer = parseInt(mathAnswerInputEl.value);
         if (userAnswer === currentMathAnswer) {
@@ -223,14 +220,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         setTimeout(generateMathProblem, 1500);
     }
-    
     mathCheckBtn.addEventListener('click', checkMathAnswer);
     mathAnswerInputEl.addEventListener('keyup', (event) => {
         if (event.key === 'Enter') checkMathAnswer();
     });
     
+    // --- OTRAS FUNCIONES ---
+    langButtons.forEach(button => { button.addEventListener('click', () => { gameState.language = button.dataset.lang; updateUI(); saveState(); }); });
     function updateScore(points) {
-        gameState.score = Math.max(0, gameState.score + points); // Evitar puntuaciones negativas
+        gameState.score = Math.max(0, gameState.score + points);
         scoreValueEl.textContent = gameState.score;
         saveState();
     }
