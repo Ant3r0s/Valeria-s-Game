@@ -38,6 +38,8 @@ body.dark-mode .game-card.disabled:hover { background-color: #3b4454; color: #a0
 .game-status { display: block; font-size: 0.8rem; margin-top: 0.5rem; }
 #math-challenge-view h2, #shop-view h2, #closet-view h2 { text-align: center; }
 #closet-view .subtitle { text-align: center; margin-top: -1rem; margin-bottom: 2rem; opacity: 0.8;}
+.difficulty-display { text-align: center; font-size: 1.1rem; margin-bottom: 1rem; }
+#current-math-level { font-weight: bold; color: var(--primary-blue); text-transform: capitalize; }
 #math-game-area { text-align: center; }
 .math-problem-box { background-color: var(--light-gray); padding: 2rem; border-radius: 10px; font-size: 2.5rem; font-weight: 700; margin-bottom: 1.5rem; }
 #math-answer-input { width: 100%; max-width: 300px; padding: 1rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--light-gray); border-radius: 10px; margin-bottom: 1.5rem; background-color: var(--card-bg); color: var(--text-color); }
