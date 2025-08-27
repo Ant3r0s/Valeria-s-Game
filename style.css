@@ -26,7 +26,21 @@ body { margin: 0; font-family: var(--font-family); background-color: var(--bg-co
 .view { position: relative; }
 .back-button { position: absolute; top: -1rem; left: 0; background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--primary-blue); font-weight: 600; }
 .title { text-align: center; margin-top: 0; }
-.game-selection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; }
+
+.section-title {
+    text-align: center;
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
+    color: var(--primary-blue);
+    font-size: 1.5rem;
+    border-bottom: 2px solid var(--light-gray);
+    padding-bottom: 0.5rem;
+}
+.section-title:first-of-type {
+    margin-top: 0;
+}
+
+.game-selection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.5rem; margin-bottom: 2rem; }
 .game-card { background-color: var(--light-gray); border: none; border-radius: 15px; padding: 1.5rem; font-family: var(--font-family); text-align: center; cursor: pointer; transition: all 0.2s ease; color: var(--text-color); }
 .game-card:hover { transform: translateY(-5px); box-shadow: 0 5px 15px var(--shadow-color); background-color: var(--secondary-green); color: #fff; }
 .game-card.disabled { background-color: #e0e0e0; cursor: not-allowed; opacity: 0.6; }
@@ -34,13 +48,15 @@ body.dark-mode .game-card.disabled { background-color: #3b4454; color: #a0aec0; 
 .game-card.disabled:hover { transform: none; box-shadow: none; background-color: #e0e0e0; color: #333;}
 body.dark-mode .game-card.disabled:hover { background-color: #3b4454; color: #a0aec0;}
 .game-icon { display: block; font-size: 2.5rem; margin-bottom: 1rem; }
-.game-title { font-size: 1.1rem; font-weight: 600; }
+.game-title { font-size: 1.1rem; font-weight: 600; line-height: 1.2; } /* Ajuste para una línea */
 .game-status { display: block; font-size: 0.8rem; margin-top: 0.5rem; }
-#math-challenge-view h2, #shop-view h2, #closet-view h2 { text-align: center; }
+h2 { text-align: center; margin-bottom: 2rem; }
 #closet-view .subtitle { text-align: center; margin-top: -1rem; margin-bottom: 2rem; opacity: 0.8;}
-#math-game-area { text-align: center; }
+#math-game-area, #word-guess-game-area { text-align: center; }
+.difficulty-display { text-align: center; font-size: 1.1rem; margin-bottom: 1rem; }
+#current-math-level, #current-word-guess-difficulty { font-weight: bold; color: var(--primary-blue); }
 .math-problem-box { background-color: var(--light-gray); padding: 2rem; border-radius: 10px; font-size: 2.5rem; font-weight: 700; margin-bottom: 1.5rem; }
-#math-answer-input { width: 100%; max-width: 300px; padding: 1rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--light-gray); border-radius: 10px; margin-bottom: 1.5rem; background-color: var(--card-bg); color: var(--text-color); }
+#math-answer-input, #word-guess-input { width: 100%; max-width: 300px; padding: 1rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--light-gray); border-radius: 10px; margin-bottom: 1.5rem; background-color: var(--card-bg); color: var(--text-color); }
 .action-btn { padding: 1rem 2rem; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; font-family: var(--font-family); cursor: pointer; background-color: var(--primary-blue); color: #fff; transition: background-color 0.2s ease; }
 .action-btn:hover { background-color: #2980b9; }
 .feedback-text { min-height: 24px; font-weight: 600; font-size: 1.2rem; }
@@ -51,14 +67,14 @@ body.dark-mode .game-card.disabled:hover { background-color: #3b4454; color: #a0
 .close-button { position: absolute; top: 15px; right: 20px; font-size: 2rem; background: none; border: none; cursor: pointer; color: var(--text-color); }
 .settings-section { margin-bottom: 2rem; padding-bottom: 1rem; border-bottom: 2px solid var(--light-gray); }
 .settings-section:last-child { border-bottom: none; margin-bottom: 0; }
-.difficulty-buttons { display: flex; gap: 1rem; justify-content: center; }
+.difficulty-buttons { display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap; /* Para que los botones se ajusten en varias líneas */ }
 .difficulty-btn { padding: 1rem 2rem; border: none; border-radius: 10px; font-size: 1rem; font-weight: 600; font-family: var(--font-family); cursor: pointer; background-color: var(--light-gray); color: var(--text-color); transition: background-color 0.2s ease; }
 .difficulty-btn.active, .difficulty-btn:hover { background-color: var(--secondary-green); color: #fff; }
 .shop-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 1.5rem; }
 .shop-item { background-color: var(--light-gray); border-radius: 15px; padding: 1rem; text-align: center; border: 3px solid transparent; transition: border-color 0.2s ease; cursor: pointer; }
 .shop-item.active { border-color: var(--secondary-green); }
 .shop-item-icon img { width: 80px; height: 80px; object-fit: cover; border-radius: 50%; margin-bottom: 0.5rem; background-color: #fff; }
-.shop-item-name { font-weight: 600; margin-bottom: 0.5rem; color: var(--text-color); }
+.shop-item-name { font-weight: 600; margin-bottom: 0.5rem; color: var(--text-color); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; /* Para que el texto largo no salte */ }
 .shop-item-price { font-weight: 600; color: var(--primary-blue); margin-bottom: 1rem; }
 .buy-btn, .equip-btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; font-weight: 600; font-family: var(--font-family); cursor: pointer; background-color: var(--secondary-green); color: #fff; width: 100%; transition: background-color 0.2s ease; }
 .buy-btn:hover:not(:disabled) { background-color: #27ae60; }
@@ -72,3 +88,36 @@ body.dark-mode .game-card.disabled:hover { background-color: #3b4454; color: #a0
 .slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
 input:checked + .slider { background-color: var(--primary-blue); }
 input:checked + .slider:before { transform: translateX(26px); }
+
+/* --- NUEVOS ESTILOS PARA ADIVINA LA PALABRA --- */
+.word-display-grid {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap; /* Para palabras largas */
+}
+.letter-box {
+    width: 45px;
+    height: 45px;
+    border: 2px solid var(--primary-blue);
+    background-color: var(--light-gray);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 1.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    border-radius: 8px;
+    transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+.letter-box.correct {
+    background-color: var(--secondary-green);
+    border-color: var(--secondary-green);
+    color: #fff;
+}
+.letter-box.wrong {
+    background-color: var(--red-error);
+    border-color: var(--red-error);
+    color: #fff;
+}
