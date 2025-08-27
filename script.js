@@ -6,12 +6,11 @@ document.addEventListener('DOMContentLoaded', () => {
         theme: 'light',
         settings: { math: { level: 'easy' } },
         avatar: {
-            owned: ['stich'], // Stitch es el avatar inicial que ya se posee
-            active: 'stich',   // Stitch es el avatar equipado por defecto
+            owned: ['stich'],
+            active: 'stich',
         }
     };
 
-    // Base de datos de la tienda - ¡ACTUALIZADA CON TUS PNGS Y PRECIOS!
     const shopAvatars = [
         { id: 'stich', name: 'Experimento', price: 0, path: 'assets/avatar/stich.png' },
         { id: 'shrek', name: 'Ogro del Pantano', price: 150, path: 'assets/avatar/shrek.png' },
@@ -141,6 +140,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (activeAvatar) {
             headerAvatarImg.src = activeAvatar.path;
             mathAvatarImg.src = activeAvatar.path;
+        } else {
+            // Fallback si el avatar activo no existe (por si acaso)
+            const fallbackAvatar = shopAvatars[0];
+            headerAvatarImg.src = fallbackAvatar.path;
+            mathAvatarImg.src = fallbackAvatar.path;
         }
     }
 
