@@ -10,7 +10,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 guessWord: { 
                     level: 'easy', 
                     theme: 'animales',
-                    // --- NUEVO: Estado para el modo parental ---
                     parentMode: {
                         active: false,
                         words: []
@@ -72,21 +71,17 @@ document.addEventListener('DOMContentLoaded', () => {
             const savedState = localStorage.getItem('valeriaGameState');
             if (savedState) {
                 const loadedState = JSON.parse(savedState);
-                // Fusionar estado guardado con el estado por defecto para evitar errores si hay nuevas propiedades
-                Object.keys(state.gameState).forEach(key => {
-                    if (loadedState[key] !== undefined) {
-                        if (typeof state.gameState[key] === 'object' && state.gameState[key] !== null && !Array.isArray(state.gameState[key])) {
-                            // Asegurarse de que los sub-objetos también se fusionen correctamente
-                            Object.assign(state.gameState[key], loadedState[key]);
-                            // Caso especial para guessWord.parentMode para que no se pierda
-                            if (key === 'settings' && loadedState.settings.guessWord.parentMode) {
-                               state.gameState.settings.guessWord.parentMode = loadedState.settings.guessWord.parentMode;
-                            }
-                        } else {
-                            state.gameState[key] = loadedState[key];
-                        }
-                    }
-                });
+                // Sobrescribimos el estado por defecto con el guardado
+                Object.assign(state.gameState, loadedState);
+                
+                // === ARREGLO IMPORTANTE ===
+                // Nos aseguramos de que las nuevas propiedades existan después de cargar una partida vieja
+                if (!state.gameState.settings.guessWord.parentMode) {
+                    state.gameState.settings.guessWord.parentMode = {
+                        active: false,
+                        words: []
+                    };
+                }
             }
         }
     };
@@ -102,7 +97,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 guessWordThemeSettingBtns: document.querySelectorAll('#guess-word-theme-setting .difficulty-btn'),
                 darkModeToggle: document.getElementById('dark-mode-toggle'),
                 langButtons: document.querySelectorAll('.lang-btn'),
-                // --- NUEVO: Botón modo parental ---
                 parentModeBtn: document.getElementById('parent-mode-btn')
             };
             this.elements.settingsBtn.addEventListener('click', () => this.open());
@@ -112,8 +106,6 @@ document.addEventListener('DOMContentLoaded', () => {
             this.elements.guessWordThemeSettingBtns.forEach(btn => btn.addEventListener('click', () => this.setGuessWordSetting('theme', btn.dataset.theme)));
             this.elements.darkModeToggle.addEventListener('change', () => this.toggleDarkMode());
             this.elements.langButtons.forEach(btn => btn.addEventListener('click', () => this.setLanguage(btn.dataset.lang)));
-            
-            // --- NUEVO: Evento para el botón parental ---
             this.elements.parentModeBtn.addEventListener('click', () => {
                 const password = prompt('Introduce la contraseña para acceder al modo parental:');
                 if (password === 'ponchito') {
@@ -135,7 +127,6 @@ document.addEventListener('DOMContentLoaded', () => {
         triggerGameRestartIfActive() { const guessWordView = document.getElementById('guess-word-view'); if (guessWordView && !guessWordView.classList.contains('hidden')) { guessWordGame.start(); } }
     };
     
-    // --- NUEVO: Módulo completo para el modo parental ---
     const parentMode = {
         init() {
             this.elements = {
@@ -148,7 +139,6 @@ document.addEventListener('DOMContentLoaded', () => {
                 defEnInput: document.getElementById('parent-mode-def-en-input'),
                 wordList: document.getElementById('parent-mode-word-list'),
             };
-
             this.elements.closeBtn.addEventListener('click', () => this.close());
             this.elements.toggle.addEventListener('change', () => this.toggleActivation());
             this.elements.addBtn.addEventListener('click', () => this.addWord());
@@ -168,7 +158,7 @@ document.addEventListener('DOMContentLoaded', () => {
         toggleActivation() {
             state.gameState.settings.guessWord.parentMode.active = this.elements.toggle.checked;
             persistence.save();
-            this.render(); // Re-render para mostrar el estado
+            this.render();
         },
         addWord() {
             const word = this.elements.wordInput.value.trim().toUpperCase();
@@ -176,14 +166,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const defEn = this.elements.defEnInput.value.trim();
 
             if (word && defEs && defEn) {
-                const newWord = {
-                    word: word,
-                    def: { es: defEs, en: defEn }
-                };
+                const newWord = { word, def: { es: defEs, en: defEn } };
                 state.gameState.settings.guessWord.parentMode.words.push(newWord);
                 persistence.save();
                 this.render();
-                // Limpiar inputs
                 this.elements.wordInput.value = '';
                 this.elements.defEsInput.value = '';
                 this.elements.defEnInput.value = '';
@@ -201,17 +187,13 @@ document.addEventListener('DOMContentLoaded', () => {
             const { active, words } = state.gameState.settings.guessWord.parentMode;
             this.elements.toggle.checked = active;
             this.elements.wordList.innerHTML = '';
-
             if (words.length === 0) {
                 this.elements.wordList.innerHTML = '<p class="small-text">No hay palabras personalizadas todavía.</p>';
             } else {
                 words.forEach(w => {
                     const wordEl = document.createElement('div');
                     wordEl.className = 'parent-word-item';
-                    wordEl.innerHTML = `
-                        <span><strong>${w.word}</strong>: "${w.def.es}"</span>
-                        <button class="delete-word-btn" data-word="${w.word}">&times;</button>
-                    `;
+                    wordEl.innerHTML = `<span><strong>${w.word}</strong>: "${w.def.es}"</span><button class="delete-word-btn" data-word="${w.word}">&times;</button>`;
                     this.elements.wordList.appendChild(wordEl);
                 });
             }
@@ -264,10 +246,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const { parentMode } = state.gameState.settings.guessWord;
             let questionPool;
 
-            // --- NUEVO: Comprobar si el modo parental está activo y tiene palabras ---
-            if (parentMode.active && parentMode.words.length > 0) {
+            if (parentMode && parentMode.active && parentMode.words.length > 0) {
                 questionPool = parentMode.words;
-                console.log("Modo Parental Activado. Usando palabras personalizadas.");
             } else {
                 const { level, theme } = state.gameState.settings.guessWord;
                 questionPool = state.questionBank[theme]?.[level];
@@ -294,7 +274,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     const shop = {
         init() { this.elements = { grid: document.getElementById('shop-items-grid') }; this.elements.grid.addEventListener('click', (event) => { if (event.target.classList.contains('buy-btn')) this.buy(event.target.dataset.itemId); }); },
-        render() { this.elements.grid.innerHTML = ''; state.shopAvatars.forEach(avatar => { if (avatar.price === 0) return; const owned = state.gameState.avatar.owned.includes(avatar.id); const canAfford = state.gameState.score >= avatar.price; const itemEl = document.createElement('div'); itemEl.className = 'shop-item'; itemEl.innerHTML = `<div class="shop-item-icon"><img src="${avatar.path}" alt="${avatar.name}"></div><div class="shop-item-name">${avatar.name}</div><div class="shop-item-price">${avatar.price} 🪙</div><button class="buy-btn" data-item-id="${avatar.id}" ${owned || !canAfford ? 'disabled' : ''}>${owned ? 'Adquirido' : 'Comprar'}</button>`; this.elements.grid.appendChild(itemEl); }); },
+        render() { this.elements.grid.innerHTML = ''; state.shopAvatars.forEach(avatar => { if (avatar.price === 0) return; const owned = state.gameState.avatar.owned.includes(avatar.id); const canAfford = state.gameState.score >= avatar.price; const itemEl = document.createElement('div'); itemEl.className = 'shop-item'; itemEl.innerHTML = `<div class="shop-item-icon"><img src="${avatar.path}" alt="${avatar.name}"></div><div class.shop-item-name">${avatar.name}</div><div class="shop-item-price">${avatar.price} 🪙</div><button class="buy-btn" data-item-id="${avatar.id}" ${owned || !canAfford ? 'disabled' : ''}>${owned ? 'Adquirido' : 'Comprar'}</button>`; this.elements.grid.appendChild(itemEl); }); },
         buy(avatarId) { const avatar = state.shopAvatars.find(a => a.id === avatarId); if (!avatar || state.gameState.avatar.owned.includes(avatarId) || state.gameState.score < avatar.price) return; game.updateScore(-avatar.price); state.gameState.avatar.owned.push(avatarId); state.gameState.avatar.active = avatarId; persistence.save(); this.render(); ui.updateAvatar(); }
     };
 
@@ -314,7 +294,6 @@ document.addEventListener('DOMContentLoaded', () => {
             guessWordGame.init();
             shop.init();
             closet.init();
-            // --- NUEVO: Inicializar el módulo parental ---
             parentMode.init();
             this.updateFullUI();
             ui.showView('main-menu-view');
