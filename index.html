@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>El Nuevo Juego de Valeria</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="score-display">
+                <span class="score-label">Puntos:</span>
+                <span id="score-value">0</span> 🪙
+            </div>
+            <div class="lang-selector">
+                <button class="lang-btn active" data-lang="es">🇪🇸 ES</button>
+                <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+            </div>
+        </header>
+
+        <main id="views-container">
+
+            <div id="main-menu-view" class="view">
+                <h1 class="title">El Nuevo Juego de Valeria</h1>
+                <div class="game-selection-grid">
+                    <button class="game-card" data-game="math-challenge">
+                        <span class="game-icon">🧮</span>
+                        <span class="game-title">Reto Matemático</span>
+                    </button>
+                    <button class="game-card disabled" data-game="guess-word">
+                        <span class="game-icon">📝</span>
+                        <span class="game-title">Adivina la Palabra</span>
+                        <span class="game-status">(Próximamente)</span>
+                    </button>
+                    <button class="game-card disabled" data-game="fill-sentence">
+                        <span class="game-icon">✍️</span>
+                        <span class="game-title">Completa la Frase</span>
+                        <span class="game-status">(Próximamente)</span>
+                    </button>
+                     <button class="game-card disabled" data-game="what-am-i">
+                        <span class="game-icon">🖼️</span>
+                        <span class="game-title">¿Qué Soy? (Visual)</span>
+                        <span class="game-status">(Próximamente)</span>
+                    </button>
+                </div>
+            </div>
+
+            <div id="math-challenge-view" class="view hidden">
+                 <button class="back-button">&larr; Volver al menú</button>
+                 <h2>🧮 Reto Matemático</h2>
+                 <div id="math-level-selection">
+                    <p>Selecciona la dificultad:</p>
+                    <div class="difficulty-buttons">
+                        <button class="difficulty-btn" data-level="easy">Fácil</button>
+                        <button class="difficulty-btn" data-level="medium">Medio</button>
+                        <button class="difficulty-btn" data-level="hard">Difícil</button>
+                    </div>
+                 </div>
+
+                 <div id="math-game-area" class="hidden">
+                    <div class="math-problem-box">
+                        <span id="math-problem-text"></span>
+                    </div>
+                    <input type="number" id="math-answer-input" placeholder="Tu respuesta...">
+                    <button id="math-check-btn" class="action-btn">Comprobar</button>
+                    <div id="math-feedback-text" class="feedback-text"></div>
+                 </div>
+            </div>
+
+        </main>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
