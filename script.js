@@ -1,5 +1,3 @@
-import { pipeline } from 'https://cdn.jsdelivr.net/npm/@xenova/transformers@2.17.1';
-
 document.addEventListener('DOMContentLoaded', () => {
     // --- ESTADO GLOBAL Y DATOS ---
     const state = {
@@ -7,7 +5,38 @@ document.addEventListener('DOMContentLoaded', () => {
         shopAvatars: [ { id: 'stich', name: 'Experimento', price: 0, path: 'assets/avatar/stich.png' }, { id: 'shrek', name: 'Ogro', price: 150, path: 'assets/avatar/shrek.png' }, { id: 'balerrinna', name: 'Bailarina', price: 250, path: 'assets/avatar/balerrinna.png' }, { id: 'maincraft', name: 'Steve', price: 400, path: 'assets/avatar/maincraft.png' }, { id: 'tung', name: 'Tipo Duro', price: 600, path: 'assets/avatar/tung.png' }, { id: 'kpop', name: 'Idol K-Pop', price: 1000, path: 'assets/avatar/kpop.png' }, ],
         currentMathAnswer: 0,
         guessWordState: {},
-        textGenerator: null,
+        // --- NUEVO: Nuestro propio libro de preguntas ---
+        questionBank: {
+            animales: {
+                easy: [
+                    { word: 'DOG', def: { es: 'El mejor amigo del hombre, ladra.', en: 'Man\'s best friend, it barks.' } },
+                    { word: 'CAT', def: { es: 'Un felino doméstico que maúlla.', en: 'A domestic feline that meows.' } },
+                    { word: 'PIG', def: { es: 'Un animal de granja rosa que hace "oinc".', en: 'A pink farm animal that says "oink".' } },
+                ],
+                medium: [
+                    { word: 'TIGER', def: { es: 'Un gran felino naranja con rayas negras.', en: 'A large orange feline with black stripes.' } },
+                    { word: 'HORSE', def: { es: 'Un animal que se monta y relincha.', en: 'An animal that is ridden and neighs.' } },
+                ],
+                hard: [
+                    { word: 'ELEPHANT', def: { es: 'Un mamífero gris muy grande con trompa.', en: 'A very large grey mammal with a trunk.' } },
+                    { word: 'GIRAFFE', def: { es: 'El animal más alto, con un cuello muy largo.', en: 'The tallest animal, with a very long neck.' } },
+                ]
+            },
+            comida: {
+                easy: [
+                    { word: 'EGG', def: { es: 'Es blanco por fuera, amarillo por dentro.', en: 'It is white on the outside, yellow on the inside.' } },
+                    { word: 'PAN', def: { es: 'Se usa para hacer bocadillos.', en: 'Used to make sandwiches.'}},
+                ],
+                medium: [
+                    { word: 'APPLE', def: { es: 'Una fruta roja y redonda.', en: 'A red and round fruit.' } },
+                    { word: 'CHEESE', def: { es: 'Un producto lácteo que le encanta a los ratones.', en: 'A dairy product that mice love.' } },
+                ],
+                hard: [
+                    { word: 'SPAGHETTI', def: { es: 'Un tipo de pasta italiana muy larga y fina.', en: 'A type of very long and thin Italian pasta.' } },
+                ]
+            },
+            // Se pueden añadir más temas aquí
+        },
         uiStrings: {
             es: { points: "Puntos:", main_title: "El Nuevo Juego de Valeria", menu_games_title: "Juegos", menu_extras_title: "Extras", game_math: "Reto Matemático", game_guess_word: "Adivina la Palabra", game_shop: "Tienda", game_closet: "Mi Colección", back_button: "&larr; Volver", attempts_left: "Intentos restantes:", settings_title: "⚙️ Ajustes", settings_appearance: "Apariencia", settings_dark_mode: "Modo Oscuro", settings_select_difficulty: "Dificultad:", settings_easy: "Fácil", settings_medium: "Medio", settings_hard: "Difícil", settings_select_theme: "Tema:", check_answer: "Comprobar", current_difficulty: "Dificultad:", closet_subtitle: "Selecciona tu avatar activo" },
             en: { points: "Points:", main_title: "Valeria's New Game", menu_games_title: "Games", menu_extras_title: "Extras", game_math: "Math Challenge", game_guess_word: "Guess the Word", game_shop: "Shop", game_closet: "My Collection", back_button: "&larr; Back", attempts_left: "Attempts left:", settings_title: "⚙️ Settings", settings_appearance: "Appearance", settings_dark_mode: "Dark Mode", settings_select_difficulty: "Difficulty:", settings_easy: "Easy", settings_medium: "Medium", settings_hard: "Hard", settings_select_theme: "Theme:", check_answer: "Check", current_difficulty: "Difficulty:", closet_subtitle: "Select your active avatar" }
@@ -15,8 +44,6 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- MÓDULOS DE LÓGICA ---
-    
-    // Módulo de UI: gestiona qué se ve y actualiza elementos comunes
     const ui = {
         init() {
             this.elements = {
@@ -36,49 +63,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 button.addEventListener('click', () => this.showView(button.dataset.view));
             });
         },
-        showView(viewId) {
-            this.elements.views.forEach(view => {
-                if (!view.classList.contains('modal')) view.classList.add('hidden');
-            });
-            document.getElementById(viewId).classList.remove('hidden');
-        },
+        showView(viewId) { this.elements.views.forEach(view => { if (!view.classList.contains('modal')) view.classList.add('hidden'); }); document.getElementById(viewId).classList.remove('hidden'); },
         updateScore() { this.elements.scoreValueEl.textContent = state.gameState.score; },
-        updateAvatar() {
-            const activeAvatar = state.shopAvatars.find(a => a.id === state.gameState.avatar.active);
-            if (activeAvatar) {
-                this.elements.headerAvatarImg.src = activeAvatar.path;
-                this.elements.mathAvatarImg.src = activeAvatar.path;
-            }
-        },
-        updateTexts() {
-            const lang = state.gameState.language;
-            document.querySelectorAll('[data-i18n-key]').forEach(el => {
-                const key = el.dataset.i18nKey;
-                const targetEl = el.querySelector('span') || el; // Para que funcione en botones con spans dentro
-                if (state.uiStrings[lang][key]) targetEl.innerHTML = state.uiStrings[lang][key];
-            });
-        }
+        updateAvatar() { const activeAvatar = state.shopAvatars.find(a => a.id === state.gameState.avatar.active); if (activeAvatar) { this.elements.headerAvatarImg.src = activeAvatar.path; this.elements.mathAvatarImg.src = activeAvatar.path; } },
+        updateTexts() { const lang = state.gameState.language; document.querySelectorAll('[data-i18n-key]').forEach(el => { const key = el.dataset.i18nKey; const targetEl = el.querySelector('.game-title') || el; if (state.uiStrings[lang][key]) targetEl.innerHTML = state.uiStrings[lang][key]; }); }
     };
 
-    // Módulo de Persistencia: guarda y carga el estado del juego
     const persistence = {
         save() { localStorage.setItem('valeriaGameState', JSON.stringify(state.gameState)); },
-        load() {
-            const savedState = localStorage.getItem('valeriaGameState');
-            if (savedState) {
-                const loadedState = JSON.parse(savedState);
-                Object.keys(state.gameState).forEach(key => {
-                    if (loadedState[key] !== undefined) {
-                        if (typeof state.gameState[key] === 'object' && state.gameState[key] !== null && !Array.isArray(state.gameState[key])) {
-                            Object.assign(state.gameState[key], loadedState[key]);
-                        } else { state.gameState[key] = loadedState[key]; }
-                    }
-                });
-            }
-        }
+        load() { const savedState = localStorage.getItem('valeriaGameState'); if (savedState) { const loadedState = JSON.parse(savedState); Object.keys(state.gameState).forEach(key => { if (loadedState[key] !== undefined) { if (typeof state.gameState[key] === 'object' && state.gameState[key] !== null && !Array.isArray(state.gameState[key])) { Object.assign(state.gameState[key], loadedState[key]); } else { state.gameState[key] = loadedState[key]; } } }); } }
     };
     
-    // Módulo de Ajustes
     const settings = {
         init() {
             this.elements = {
@@ -101,78 +96,50 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         open() { this.updateUI(); this.elements.settingsView.classList.remove('hidden'); },
         close() { this.elements.settingsView.classList.add('hidden'); },
-        updateUI() {
-            const { math, guessWord } = state.gameState.settings;
-            this.elements.mathLevelSettingBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.level === math.level));
-            this.elements.guessWordLevelSettingBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.level === guessWord.level));
-            this.elements.guessWordThemeSettingBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.theme === guessWord.theme));
-            this.elements.darkModeToggle.checked = state.gameState.theme === 'dark';
-        },
+        updateUI() { const { math, guessWord } = state.gameState.settings; this.elements.mathLevelSettingBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.level === math.level)); this.elements.guessWordLevelSettingBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.level === guessWord.level)); this.elements.guessWordThemeSettingBtns.forEach(btn => btn.classList.toggle('active', btn.dataset.theme === guessWord.theme)); this.elements.darkModeToggle.checked = state.gameState.theme === 'dark'; },
         applyTheme() { document.body.classList.toggle('dark-mode', state.gameState.theme === 'dark'); },
         setMathLevel(level) { state.gameState.settings.math.level = level; persistence.save(); this.updateUI(); },
         toggleDarkMode() { state.gameState.theme = this.elements.darkModeToggle.checked ? 'dark' : 'light'; this.applyTheme(); persistence.save(); },
-        setLanguage(lang) {
-            state.gameState.language = lang;
-            this.updateLangUI();
-            ui.updateTexts();
-            persistence.save();
-            this.triggerGameRestartIfActive();
-        },
-        setGuessWordSetting(key, value) {
-            state.gameState.settings.guessWord[key] = value;
-            persistence.save();
-            this.updateUI();
-            this.triggerGameRestartIfActive();
-        },
+        setLanguage(lang) { state.gameState.language = lang; this.updateLangUI(); ui.updateTexts(); persistence.save(); this.triggerGameRestartIfActive(); },
+        setGuessWordSetting(key, value) { state.gameState.settings.guessWord[key] = value; persistence.save(); this.updateUI(); this.triggerGameRestartIfActive(); },
         updateLangUI() { this.elements.langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === state.gameState.language)); },
-        triggerGameRestartIfActive() {
-            const guessWordView = document.getElementById('guess-word-view');
-            if (!guessWordView.classList.contains('hidden')) {
-                guessWordGame.start();
-            }
-        }
+        triggerGameRestartIfActive() { const guessWordView = document.getElementById('guess-word-view'); if (guessWordView && !guessWordView.classList.contains('hidden')) { guessWordGame.start(); } }
     };
 
-    // Módulo Adivina la Palabra
     const guessWordGame = {
-        init() { this.elements = { attempts: document.getElementById('guess-word-attempts'), definition: document.getElementById('guess-word-definition'), boxes: document.getElementById('guess-word-boxes'), keyboard: document.getElementById('keyboard-container') }; this.renderKeyboard(); },
-        async start() {
-            this.elements.definition.innerHTML = '<p>Contactando con la IA...</p>';
-            this.elements.keyboard.querySelectorAll('.key').forEach(k => k.disabled = false);
-            if (!state.textGenerator) {
-                this.elements.definition.innerHTML = '<p>Cargando IA de lenguaje (sólo la primera vez)...</p>';
-                try {
-                    state.textGenerator = await pipeline('text-generation', 'Xenova/distilgpt2');
-                } catch (error) { console.error("Error al cargar el modelo de IA:", error); this.elements.definition.textContent = 'Error: No se pudo cargar el modelo de IA.'; return; }
-            }
-            const { level, theme } = state.gameState.settings.guessWord;
-            const lang = state.gameState.language === 'es' ? 'Spanish' : 'English';
-            let minLetters, maxLetters;
-            if (level === 'easy') { minLetters = 3; maxLetters = 4; } else if (level === 'medium') { minLetters = 5; maxLetters = 7; } else { minLetters = 8; maxLetters = 10; }
-            const numLetters = Math.floor(Math.random() * (maxLetters - minLetters + 1)) + minLetters;
-            const prompt = `Generate a simple quiz question.\n###\nLanguage: English\nTheme: animals\nLetters: 3\nDefinition: A loyal pet that barks.\nWord: DOG\n###\nLanguage: Spanish\nTheme: comida\nLetters: 5\nDefinition: Una fruta roja y redonda.\nWord: APPLE\n###\nLanguage: ${lang}\nTheme: ${theme}\nLetters: ${numLetters}\nDefinition:`;
-            try {
-                const result = await state.textGenerator(prompt, { max_new_tokens: 50 });
-                const parsed = this.parseAIResponse(result[0].generated_text, numLetters);
-                if (!parsed) throw new Error("La IA no devolvió un formato válido tras varios intentos.");
-                state.guessWordState = { word: parsed.word, guessedLetters: new Set(), attempts: 6 };
-                this.elements.definition.textContent = parsed.definition;
-                this.renderBoxes();
-                this.updateAttempts();
-            } catch (error) { console.error("Error de la IA:", error); this.elements.definition.textContent = 'Error de la IA. Generando otra pregunta...'; setTimeout(() => this.start(), 2000); }
+        init() {
+            this.elements = { 
+                attempts: document.getElementById('guess-word-attempts'), 
+                definition: document.getElementById('guess-word-definition').querySelector('p'), 
+                boxes: document.getElementById('guess-word-boxes'), 
+                keyboard: document.getElementById('keyboard-container') 
+            };
+            this.renderKeyboard();
         },
-        parseAIResponse(rawText, expectedLength) {
-            const parts = rawText.split('###');
-            const lastPart = parts[parts.length - 1].trim();
-            const definitionMatch = lastPart.match(/Definition:(.*?)\nWord:(.*)/s);
-            if (definitionMatch && definitionMatch[2]) {
-                const word = definitionMatch[2].trim().toUpperCase().replace(/[^A-Z]/g, '');
-                if (word.length >= 3) { // Aceptamos la palabra si tiene al menos 3 letras
-                    return { definition: definitionMatch[1].trim(), word: word };
-                }
+        start() {
+            this.elements.keyboard.querySelectorAll('.key').forEach(k => k.disabled = false);
+            
+            const { level, theme } = state.gameState.settings.guessWord;
+            const lang = state.gameState.language;
+
+            // Seleccionar una pregunta del nuevo "libro"
+            const questionPool = state.questionBank[theme]?.[level];
+            if (!questionPool || questionPool.length === 0) {
+                this.elements.definition.textContent = `No hay preguntas para ${theme}/${level}.`;
+                return;
             }
-            console.warn("La IA devolvió una respuesta mal formada:", { rawText });
-            return null;
+
+            const question = questionPool[Math.floor(Math.random() * questionPool.length)];
+            
+            state.guessWordState = {
+                word: question.word.toUpperCase(),
+                guessedLetters: new Set(),
+                attempts: 6,
+            };
+            
+            this.elements.definition.textContent = question.def[lang]; // Usar la definición en el idioma correcto
+            this.renderBoxes();
+            this.updateAttempts();
         },
         renderBoxes() { this.elements.boxes.innerHTML = ''; for (const letter of state.guessWordState.word) { const box = document.createElement('div'); box.className = 'letter-box'; if (state.guessWordState.guessedLetters.has(letter)) box.textContent = letter; this.elements.boxes.appendChild(box); } },
         renderKeyboard() { this.elements.keyboard.innerHTML = ''; 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(letter => { const key = document.createElement('button'); key.className = 'key'; key.textContent = letter; key.addEventListener('click', () => this.handleGuess(letter)); this.elements.keyboard.appendChild(key); }); },
@@ -181,9 +148,10 @@ document.addEventListener('DOMContentLoaded', () => {
         checkGameStatus() { const wordSolved = [...state.guessWordState.word].every(letter => state.guessWordState.guessedLetters.has(letter)); if (wordSolved) { this.elements.definition.textContent = `¡CORRECTO! La palabra era ${state.guessWordState.word}`; game.updateScore(25); this.elements.keyboard.querySelectorAll('.key').forEach(key => key.disabled = true); setTimeout(()=>this.start(), 2000); } else if (state.guessWordState.attempts <= 0) { this.elements.definition.textContent = `¡Has perdido! La palabra era ${state.guessWordState.word}`; this.elements.keyboard.querySelectorAll('.key').forEach(key => key.disabled = true); setTimeout(()=>this.start(), 2000); } }
     };
     
+    // El resto de módulos (tienda, colección, mates) se mantienen igual que en la v2.7
     const shop = { init() { this.elements = { grid: document.getElementById('shop-items-grid')}; this.render(); this.elements.grid.addEventListener('click', (event) => { if (event.target.classList.contains('buy-btn')) this.buy(event.target.dataset.itemId); }); }, render() { this.elements.grid.innerHTML = ''; state.shopAvatars.forEach(avatar => { if (avatar.price === 0) return; const owned = state.gameState.avatar.owned.includes(avatar.id); const canAfford = state.gameState.score >= avatar.price; const itemEl = document.createElement('div'); itemEl.className = 'shop-item'; itemEl.innerHTML = `<div class="shop-item-icon"><img src="${avatar.path}" alt="${avatar.name}"></div><div class="shop-item-name">${avatar.name}</div><div class="shop-item-price">${avatar.price} 🪙</div><button class="buy-btn" data-item-id="${avatar.id}" ${owned || !canAfford ? 'disabled' : ''}>${owned ? 'Adquirido' : 'Comprar'}</button>`; this.elements.grid.appendChild(itemEl); }); }, buy(avatarId) { const avatar = state.shopAvatars.find(a => a.id === avatarId); if (!avatar || state.gameState.avatar.owned.includes(avatarId) || state.gameState.score < avatar.price) return; game.updateScore(-avatar.price); state.gameState.avatar.owned.push(avatarId); state.gameState.avatar.active = avatarId; persistence.save(); this.render(); ui.updateAvatar(); }};
     const closet = { init() { this.elements = { grid: document.getElementById('closet-items-grid')}; this.render(); this.elements.grid.addEventListener('click', (event) => { if (event.target.classList.contains('equip-btn')) this.setActive(event.target.dataset.itemId); }); }, render() { this.elements.grid.innerHTML = ''; state.gameState.avatar.owned.forEach(avatarId => { const avatar = state.shopAvatars.find(a => a.id === avatarId); const isActive = state.gameState.avatar.active === avatarId; const itemEl = document.createElement('div'); itemEl.className = `shop-item ${isActive ? 'active' : ''}`; itemEl.innerHTML = `<div class="shop-item-icon"><img src="${avatar.path}" alt="${avatar.name}"></div><div class="shop-item-name">${avatar.name}</div><button class="equip-btn" data-item-id="${avatar.id}" ${isActive ? 'disabled' : ''}>${isActive ? 'Seleccionado' : 'Seleccionar'}</button>`; this.elements.grid.appendChild(itemEl); }); }, setActive(avatarId) { state.gameState.avatar.active = avatarId; persistence.save(); this.render(); ui.updateAvatar(); }};
-    const mathGame = { init() { this.elements = { levelDisplay: document.getElementById('current-math-level'), problemText: document.getElementById('math-problem-text'), answerInput: document.getElementById('math-answer-input'), checkBtn: document.getElementById('math-check-btn'), feedbackText: document.getElementById('math-feedback-text') }; this.elements.checkBtn.addEventListener('click', () => this.checkAnswer()); this.elements.answerInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') this.checkAnswer(); }); }, start() { const level = state.gameState.settings.math.level; this.elements.levelDisplay.textContent = level; ui.updateAvatar(); this.generateProblem(); }, generateProblem() { const level = state.gameState.settings.math.level; this.elements.answerInput.value = ''; this.elements.feedbackText.textContent = ''; this.elements.answerInput.focus(); const ops = ['+', '-']; let maxNum = 10; if (level === 'medium') { ops.push('*'); maxNum = 50; } else if (level === 'hard') { ops.push('*', '/'); maxNum = 100; } const op = ops[Math.floor(Math.random() * ops.length)]; let num1 = Math.floor(Math.random() * maxNum) + 1; let num2 = Math.floor(Math.random() * maxNum) + 1; if (op === '-') { if (num1 < num2) [num1, num2] = [num2, num1]; state.currentMathAnswer = num1 - num2; } else if (op === '+') { state.currentMathAnswer = num1 + num2; } else if (op === '*') { if (level === 'medium') num2 = Math.floor(Math.random() * 9) + 1; state.currentMathAnswer = num1 * num2; } else if (op === '/') { num2 = Math.floor(Math.random() * 9) + 2; num1 = num2 * (Math.floor(Math.random() * (maxNum / num2)) + 1); state.currentMathAnswer = num1 / num2; } this.elements.problemText.textContent = `${num1} ${op} ${num2} = ?`; }, checkAnswer() { const userAnswer = parseInt(this.elements.answerInput.value); if (isNaN(userAnswer)) { this.elements.feedbackText.textContent = '¡Introduce un número!'; this.elements.feedbackText.className = 'feedback-text incorrect'; return; } if (userAnswer === state.currentMathAnswer) { this.elements.feedbackText.textContent = '¡Correcto!'; this.elements.feedbackText.className = 'feedback-text correct'; game.updateScore(10); } else { this.elements.feedbackText.textContent = `¡Casi! La respuesta era ${state.currentMathAnswer}`; this.elements.feedbackText.className = 'feedback-text incorrect'; game.updateScore(-5); } setTimeout(() => this.generateProblem(), 1500); }};
+    const mathGame = { init() { this.elements = { levelDisplay: document.getElementById('current-math-level'), problemText: document.getElementById('math-problem-text'), answerInput: document.getElementById('math-answer-input'), checkBtn: document.getElementById('math-check-btn'), feedbackText: document.getElementById('math-feedback-text') }; this.elements.checkBtn.addEventListener('click', () => this.checkAnswer()); this.elements.answerInput.addEventListener('keyup', (event) => { if (event.key === 'Enter') this.checkAnswer(); }); }, start() { const level = state.gameState.settings.math.level; this.elements.levelDisplay.textContent = level; ui.updateAvatar(); this.generateProblem(); }, generateProblem() { const level = state.gameState.settings.math.level; this.elements.answerInput.value = ''; this.elements.feedbackText.textContent = ''; this.elements.answerInput.focus(); const ops = ['+', '-']; let maxNum = 10; if (level === 'medium') { ops.push('*'); maxNum = 50; } else if (level === 'hard') { ops.push('*', '/'); maxNum = 100; } const op = ops[Math.floor(Math.random() * ops.length)]; let num1 = Math.floor(Math.random() * maxNum) + 1; let num2 = Math.floor(Math.random() * maxNum) + 1; if (op === '-') { if (num1 < num2) [num1, num2] = [num2, num1]; state.currentMathAnswer = num1 - num2; } else if (op === '+') { state.currentMathAnswer = num1 + num2; } else if (op === '*') { if (level === 'medium') num2 = Math.floor(Math.random() * 9) + 1; state.currentMathAnswer = num1 * num2; } else if (op === '/') { num2 = Math.floor(Math.random() * 9) + 2; num1 = num2 * (Math.floor(Math.random() * (maxNum / num2)) + 1); state.currentMathAnswer = num1 / num2; } this.elements.problemText.textContent = `${num1} ${op} ${num2} = ?`; }, checkAnswer() { const userAnswer = parseInt(this.elements.answerInput.value); if (isNaN(userAnswer)) { this.elements.feedbackText.textContent = '¡Introduce un número!'; this.elements.feedbackText.className = 'feedback-text incorrect'; return; } if (userAnswer === currentMathAnswer) { this.elements.feedbackText.textContent = '¡Correcto!'; this.elements.feedbackText.className = 'feedback-text correct'; game.updateScore(10); } else { this.elements.feedbackText.textContent = `¡Casi! La respuesta era ${state.currentMathAnswer}`; this.elements.feedbackText.className = 'feedback-text incorrect'; game.updateScore(-5); } setTimeout(() => this.generateProblem(), 1500); }};
 
     // --- CONTROLADOR PRINCIPAL DEL JUEGO ---
     const game = {
@@ -202,11 +170,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     module.init();
                     module.isInitialized = true;
                 }
-                if (typeof module.start === 'function') {
-                    module.start();
-                } else if (typeof module.render === 'function') {
-                    module.render();
-                }
+                if (typeof module.start === 'function') module.start();
+                else if (typeof module.render === 'function') module.render();
             }
             ui.showView(viewId);
         },
