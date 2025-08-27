@@ -43,9 +43,9 @@
                     <button class="game-card" data-view="closet-view"><span class="game-icon">👕</span><span class="game-title" data-i18n-key="game_closet">Mi Colección</span></button>
                 </div>
             </div>
-
+            
             <div id="math-challenge-view" class="view hidden">
-                 <button class="back-button" data-view="main-menu-view">&larr; Volver</button>
+                 <button class="back-button" data-view="main-menu-view" data-i18n-key="back_button">&larr; Volver</button>
                  <h2 data-i18n-key="game_math">🧮 Reto Matemático</h2>
                  <p class="difficulty-display" data-i18n-key="current_difficulty">Dificultad: <span id="current-math-level"></span></p>
                  <div id="avatar-preview-math" class="avatar-preview large"><img id="math-avatar-img" src="" alt="Avatar actual"></div>
@@ -65,12 +65,12 @@
                 <div id="keyboard-container" class="keyboard"></div>
             </div>
            <div id="shop-view" class="view hidden">
-               <button class="back-button" data-view="main-menu-view">&larr; Volver</button>
+               <button class="back-button" data-view="main-menu-view" data-i18n-key="back_button">&larr; Volver</button>
                <h2 data-i18n-key="game_shop">🛍️ Tienda de Avatares</h2>
                <div id="shop-items-grid" class="shop-grid"></div>
            </div>
             <div id="closet-view" class="view hidden">
-                <button class="back-button" data-view="main-menu-view">&larr; Volver</button>
+                <button class="back-button" data-view="main-menu-view" data-i18n-key="back_button">&larr; Volver</button>
                 <h2 data-i18n-key="game_closet">👕 Mi Colección</h2>
                 <p class="subtitle" data-i18n-key="closet_subtitle">Selecciona tu avatar activo</p>
                 <div id="closet-items-grid" class="shop-grid"></div>
@@ -81,14 +81,14 @@
     <div id="settings-view" class="view modal hidden">
          <div class="modal-content">
             <button class="close-button">&times;</button>
-            <h2 data-i18n-key="settings_title">⚙️ Ajustes del Juego</h2>
+            <h2 data-i18n-key="settings_title">⚙️ Ajustes</h2>
             <div class="settings-section">
                 <h3 data-i18n-key="settings_appearance">Apariencia</h3>
                 <div class="setting-item"><span data-i18n-key="settings_dark_mode">Modo Oscuro</span><label class="theme-switch"><input type="checkbox" id="dark-mode-toggle"><span class="slider round"></span></label></div>
             </div>
             <div class="settings-section">
                 <h3 data-i18n-key="game_math">Reto Matemático</h3>
-                <p data-i18n-key="settings_select_difficulty">Selecciona la dificultad:</p>
+                <p data-i18n-key="settings_select_difficulty">Dificultad:</p>
                 <div class="difficulty-buttons" id="math-level-setting">
                     <button class="difficulty-btn" data-level="easy" data-i18n-key="settings_easy">Fácil</button>
                     <button class="difficulty-btn" data-level="medium" data-i18n-key="settings_medium">Medio</button>
@@ -97,13 +97,13 @@
             </div>
              <div class="settings-section">
                 <h3 data-i18n-key="game_guess_word">Adivina la Palabra</h3>
-                <p data-i18n-key="settings_select_difficulty">Selecciona la dificultad:</p>
+                <p data-i18n-key="settings_select_difficulty">Dificultad:</p>
                 <div class="difficulty-buttons" id="guess-word-level-setting">
                     <button class="difficulty-btn" data-level="easy" data-i18n-key="settings_easy">Fácil</button>
                     <button class="difficulty-btn" data-level="medium" data-i18n-key="settings_medium">Medio</button>
                     <button class="difficulty-btn" data-level="hard" data-i18n-key="settings_hard">Difícil</button>
                 </div>
-                <p data-i18n-key="settings_select_theme">Selecciona un tema:</p>
+                <p data-i18n-key="settings_select_theme">Tema:</p>
                 <div class="theme-buttons" id="guess-word-theme-setting">
                     <button class="difficulty-btn" data-theme="animales">Animales</button>
                     <button class="difficulty-btn" data-theme="comida">Comida</button>
