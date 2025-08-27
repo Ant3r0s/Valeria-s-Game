@@ -31,16 +31,21 @@
         <main id="views-container">
             <div id="main-menu-view" class="view">
                 <h1 class="title" data-i18n-key="main_title">El Nuevo Juego de Valeria</h1>
+                <p class="main-menu-subtitle" data-i18n-key="menu_games_title">Juegos</p>
                 <div class="game-selection-grid">
                     <button class="game-card" data-view="math-challenge-view"><span class="game-icon">🧮</span><span class="game-title" data-i18n-key="game_math">Reto Matemático</span></button>
                     <button class="game-card" data-view="guess-word-view"><span class="game-icon">📝</span><span class="game-title" data-i18n-key="game_guess_word">Adivina la Palabra</span></button>
-                    <button class="game-card" data-view="shop-view"><span class="game-icon">🛍️</span><span class="game-title" data-i18n-key="game_shop">Tienda</span></button>
+                </div>
+                <hr class="separator">
+                <p class="main-menu-subtitle" data-i18n-key="menu_extras_title">Extras</p>
+                <div class="meta-controls">
+                     <button class="game-card" data-view="shop-view"><span class="game-icon">🛍️</span><span class="game-title" data-i18n-key="game_shop">Tienda</span></button>
                     <button class="game-card" data-view="closet-view"><span class="game-icon">👕</span><span class="game-title" data-i18n-key="game_closet">Mi Colección</span></button>
                 </div>
             </div>
 
             <div id="math-challenge-view" class="view hidden">
-                 <button class="back-button" data-view="main-menu-view" data-i18n-key="back_button">&larr; Volver</button>
+                 <button class="back-button" data-view="main-menu-view">&larr; Volver</button>
                  <h2 data-i18n-key="game_math">🧮 Reto Matemático</h2>
                  <p class="difficulty-display" data-i18n-key="current_difficulty">Dificultad: <span id="current-math-level"></span></p>
                  <div id="avatar-preview-math" class="avatar-preview large"><img id="math-avatar-img" src="" alt="Avatar actual"></div>
@@ -51,26 +56,21 @@
                     <div id="math-feedback-text" class="feedback-text"></div>
                  </div>
             </div>
-
             <div id="guess-word-view" class="view hidden">
                 <button class="back-button" data-view="main-menu-view" data-i18n-key="back_button">&larr; Volver</button>
                 <h2 data-i18n-key="game_guess_word">📝 Adivina la Palabra</h2>
-                <div class="game-stats">
-                    <span data-i18n-key="attempts_left">Intentos restantes:</span> <span id="guess-word-attempts">6</span>
-                </div>
+                <div class="game-stats"><span data-i18n-key="attempts_left">Intentos restantes:</span> <span id="guess-word-attempts">6</span></div>
                 <div id="guess-word-definition" class="definition-box"><p>Generando pista con la IA...</p></div>
                 <div id="guess-word-boxes" class="word-boxes"></div>
                 <div id="keyboard-container" class="keyboard"></div>
             </div>
-
            <div id="shop-view" class="view hidden">
-               <button class="back-button" data-view="main-menu-view" data-i18n-key="back_button">&larr; Volver</button>
+               <button class="back-button" data-view="main-menu-view">&larr; Volver</button>
                <h2 data-i18n-key="game_shop">🛍️ Tienda de Avatares</h2>
                <div id="shop-items-grid" class="shop-grid"></div>
            </div>
-
-           <div id="closet-view" class="view hidden">
-                <button class="back-button" data-view="main-menu-view" data-i18n-key="back_button">&larr; Volver</button>
+            <div id="closet-view" class="view hidden">
+                <button class="back-button" data-view="main-menu-view">&larr; Volver</button>
                 <h2 data-i18n-key="game_closet">👕 Mi Colección</h2>
                 <p class="subtitle" data-i18n-key="closet_subtitle">Selecciona tu avatar activo</p>
                 <div id="closet-items-grid" class="shop-grid"></div>
@@ -84,10 +84,7 @@
             <h2 data-i18n-key="settings_title">⚙️ Ajustes del Juego</h2>
             <div class="settings-section">
                 <h3 data-i18n-key="settings_appearance">Apariencia</h3>
-                <div class="setting-item">
-                    <span data-i18n-key="settings_dark_mode">Modo Oscuro</span>
-                    <label class="theme-switch"><input type="checkbox" id="dark-mode-toggle"><span class="slider round"></span></label>
-                </div>
+                <div class="setting-item"><span data-i18n-key="settings_dark_mode">Modo Oscuro</span><label class="theme-switch"><input type="checkbox" id="dark-mode-toggle"><span class="slider round"></span></label></div>
             </div>
             <div class="settings-section">
                 <h3 data-i18n-key="game_math">Reto Matemático</h3>
