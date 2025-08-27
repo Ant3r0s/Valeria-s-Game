@@ -2,21 +2,31 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- ESTADO GLOBAL Y DATOS ---
     const gameState = {
         score: 0,
-        language: 'es', // 'es' o 'en'
-        // Más adelante aquí guardaremos el avatar
+        language: 'es',
+        settings: {
+            math: {
+                level: 'easy' // easy, medium, hard
+            },
+            // Aquí irán los ajustes de los otros juegos
+        }
     };
 
     // --- REFERENCIAS A ELEMENTOS DEL DOM ---
     const scoreValueEl = document.getElementById('score-value');
     const views = document.querySelectorAll('.view');
     const langButtons = document.querySelectorAll('.lang-btn');
-    const gameCards = document.querySelectorAll('.game-card');
+    const gameCards = document.querySelectorAll('#main-menu-view .game-card');
     const backButtons = document.querySelectorAll('.back-button');
+    
+    // Elementos de Ajustes
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsView = document.getElementById('settings-view');
+    const closeSettingsBtn = document.querySelector('#settings-view .close-button');
+    const mathLevelSettingBtns = document.querySelectorAll('#math-level-setting .difficulty-btn');
 
     // Elementos del Reto Matemático
-    const mathLevelBtns = document.querySelectorAll('.difficulty-btn');
-    const mathLevelSelectionEl = document.getElementById('math-level-selection');
     const mathGameAreaEl = document.getElementById('math-game-area');
+    const currentMathLevelEl = document.getElementById('current-math-level');
     const mathProblemTextEl = document.getElementById('math-problem-text');
     const mathAnswerInputEl = document.getElementById('math-answer-input');
     const mathCheckBtn = document.getElementById('math-check-btn');
@@ -25,7 +35,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- GESTIÓN DE VISTAS Y NAVEGACIÓN ---
     function showView(viewId) {
-        views.forEach(view => view.classList.add('hidden'));
+        views.forEach(view => {
+            if (!view.classList.contains('modal')) {
+                view.classList.add('hidden');
+            }
+        });
         document.getElementById(viewId).classList.remove('hidden');
     }
 
@@ -33,6 +47,9 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!card.classList.contains('disabled')) {
             card.addEventListener('click', () => {
                 const gameId = card.dataset.game;
+                if (gameId === 'math-challenge') {
+                    startGameMath();
+                }
                 showView(`${gameId}-view`);
             });
         }
@@ -42,23 +59,31 @@ document.addEventListener('DOMContentLoaded', () => {
         button.addEventListener('click', () => showView('main-menu-view'));
     });
 
-    // --- GESTIÓN DE IDIOMA Y PUNTUACIÓN ---
-    langButtons.forEach(button => {
-        button.addEventListener('click', () => {
-            gameState.language = button.dataset.lang;
-            langButtons.forEach(btn => btn.classList.remove('active'));
-            button.classList.add('active');
+    // --- LÓGICA DE AJUSTES ---
+    settingsBtn.addEventListener('click', () => {
+        updateSettingsUI();
+        settingsView.classList.remove('hidden');
+    });
+    closeSettingsBtn.addEventListener('click', () => settingsView.classList.add('hidden'));
+
+    function updateSettingsUI() {
+        // Actualizar selección de nivel de matemáticas
+        const currentMathLevel = gameState.settings.math.level;
+        mathLevelSettingBtns.forEach(btn => {
+            btn.classList.toggle('active', btn.dataset.level === currentMathLevel);
+        });
+    }
+
+    mathLevelSettingBtns.forEach(btn => {
+        btn.addEventListener('click', () => {
+            gameState.settings.math.level = btn.dataset.level;
             saveState();
-            // Aquí más adelante cambiaremos los textos de la UI
-            console.log(`Idioma cambiado a: ${gameState.language}`);
+            updateSettingsUI();
         });
     });
 
-    function updateScore(points) {
-        gameState.score += points;
-        scoreValueEl.textContent = gameState.score;
-        saveState();
-    }
+    // --- GESTIÓN DE IDIOMA Y PUNTUACIÓN ---
+    // (Sin cambios)
 
     // --- GUARDADO Y CARGA DE DATOS ---
     function saveState() {
@@ -68,7 +93,13 @@ document.addEventListener('DOMContentLoaded', () => {
     function loadState() {
         const savedState = localStorage.getItem('valeriaGameState');
         if (savedState) {
-            Object.assign(gameState, JSON.parse(savedState));
+            // Hacemos un merge cuidadoso para no perder nuevas propiedades en el futuro
+            const loadedState = JSON.parse(savedState);
+            if (loadedState.score !== undefined) gameState.score = loadedState.score;
+            if (loadedState.language !== undefined) gameState.language = loadedState.language;
+            if (loadedState.settings) {
+                if (loadedState.settings.math) gameState.settings.math = loadedState.settings.math;
+            }
         }
         scoreValueEl.textContent = gameState.score;
         langButtons.forEach(btn => {
@@ -76,21 +107,17 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- LÓGICA DEL JUEGO DE MATEMÁTICAS ---
-    mathLevelBtns.forEach(button => {
-        button.addEventListener('click', () => {
-            const level = button.dataset.level;
-            startGameMath(level);
-        });
-    });
-
-    function startGameMath(level) {
-        mathLevelSelectionEl.classList.add('hidden');
-        mathGameAreaEl.classList.remove('hidden');
-        generateMathProblem(level);
+    // --- LÓGICA DEL JUEGO DE MATEMÁTICAS (MODIFICADA) ---
+    function startGameMath() {
+        // Leemos la dificultad desde el estado global, no desde los botones
+        const level = gameState.settings.math.level;
+        currentMathLevelEl.textContent = level.charAt(0).toUpperCase() + level.slice(1);
+        generateMathProblem();
     }
 
-    function generateMathProblem(level) {
+    function generateMathProblem() {
+        const level = gameState.settings.math.level; // La dificultad viene del estado global
+
         mathAnswerInputEl.value = '';
         mathFeedbackTextEl.textContent = '';
         mathAnswerInputEl.focus();
@@ -111,16 +138,16 @@ document.addEventListener('DOMContentLoaded', () => {
         let num2 = Math.floor(Math.random() * maxNum) + 1;
 
         if (op === '-') {
-            if (num1 < num2) [num1, num2] = [num2, num1]; // Evitar negativos
+            if (num1 < num2) [num1, num2] = [num2, num1];
             currentMathAnswer = num1 - num2;
         } else if (op === '+') {
             currentMathAnswer = num1 + num2;
         } else if (op === '*') {
-             if (level === 'medium') { num2 = Math.floor(Math.random() * 9) + 1; } // Multiplicar por 1 cifra
+             if (level === 'medium') { num2 = Math.floor(Math.random() * 9) + 1; }
              currentMathAnswer = num1 * num2;
         } else if (op === '/') {
-            num2 = Math.floor(Math.random() * 9) + 2; // Dividir por 1 cifra (no 0 ni 1)
-            num1 = num2 * (Math.floor(Math.random() * (maxNum / num2)) + 1); // Asegurar que no da decimales
+            num2 = Math.floor(Math.random() * 9) + 2;
+            num1 = num2 * (Math.floor(Math.random() * (maxNum / num2)) + 1);
             currentMathAnswer = num1 / num2;
         }
         
@@ -138,21 +165,19 @@ document.addEventListener('DOMContentLoaded', () => {
             mathFeedbackTextEl.className = 'feedback-text incorrect';
             updateScore(-5);
         }
-        // Esperamos un poco y generamos la siguiente pregunta
         setTimeout(() => {
-            // Re-seleccionamos el nivel desde algún sitio o volvemos a la selección
-            // Por ahora, solo generamos otro problema del mismo nivel (simplificado)
-            const currentLevel = document.querySelector('.difficulty-btn:focus')?.dataset.level || 'easy';
-            generateMathProblem(currentLevel);
+            generateMathProblem(); // Generamos el siguiente problema con el mismo nivel
         }, 1500);
     }
     
     mathCheckBtn.addEventListener('click', checkMathAnswer);
     mathAnswerInputEl.addEventListener('keyup', (event) => {
-        if (event.key === 'Enter') {
-            checkMathAnswer();
-        }
+        if (event.key === 'Enter') { checkMathAnswer(); }
     });
+    
+    // --- FUNCIONES COMPARTIDAS SIN CAMBIOS ---
+    langButtons.forEach(button => { button.addEventListener('click', () => { gameState.language = button.dataset.lang; langButtons.forEach(btn => btn.classList.remove('active')); button.classList.add('active'); saveState(); console.log(`Idioma cambiado a: ${gameState.language}`); }); });
+    function updateScore(points) { gameState.score += points; scoreValueEl.textContent = gameState.score; saveState(); }
 
     // --- INICIALIZACIÓN ---
     function init() {
