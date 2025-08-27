@@ -31,11 +31,17 @@
         <main id="views-container">
             <div id="main-menu-view" class="view">
                 <h1 class="title">El Nuevo Juego de Valeria</h1>
+
+                <h2 class="section-title">🎮 Juegos</h2>
                 <div class="game-selection-grid">
                     <button class="game-card" data-game="math-challenge"><span class="game-icon">🧮</span><span class="game-title">Reto Matemático</span></button>
+                    <button class="game-card" data-game="word-guess"><span class="game-icon">📝</span><span class="game-title">Adivina la Palabra</span></button>
+                </div>
+
+                <h2 class="section-title">✨ Personalización</h2>
+                <div class="game-selection-grid">
                     <button class="game-card" data-game="shop"><span class="game-icon">🛍️</span><span class="game-title">Tienda de Avatares</span></button>
                     <button class="game-card" data-game="closet"><span class="game-icon">👕</span><span class="game-title">Mi Colección</span></button>
-                    <button class="game-card disabled"><span class="game-icon">📝</span><span class="game-title">Adivina la Palabra</span><span class="game-status">(Próximamente)</span></button>
                 </div>
             </div>
 
@@ -51,6 +57,22 @@
                     <button id="math-check-btn" class="action-btn">Comprobar</button>
                     <div id="math-feedback-text" class="feedback-text"></div>
                  </div>
+           </div>
+
+           <div id="word-guess-view" class="view hidden">
+                <button class="back-button">&larr; Volver</button>
+                <h2>📝 Adivina la Palabra</h2>
+                <div id="avatar-preview-word-guess" class="avatar-preview large">
+                    <img id="word-guess-avatar-img" src="" alt="Avatar actual">
+                </div>
+                <div id="word-guess-game-area">
+                    <p class="difficulty-display">Dificultad: <span id="current-word-guess-difficulty"></span></p>
+                    <div id="word-display-grid" class="word-display-grid">
+                        </div>
+                    <input type="text" id="word-guess-input" placeholder="Introduce una letra o la palabra...">
+                    <button id="word-guess-check-btn" class="action-btn">Comprobar</button>
+                    <div id="word-guess-feedback-text" class="feedback-text"></div>
+                </div>
            </div>
 
            <div id="shop-view" class="view hidden">
@@ -89,6 +111,21 @@
                     <button class="difficulty-btn" data-level="easy">Fácil</button>
                     <button class="difficulty-btn" data-level="medium">Medio</button>
                     <button class="difficulty-btn" data-level="hard">Difícil</button>
+                </div>
+            </div>
+            <div class="settings-section">
+                <h3>Adivina la Palabra</h3>
+                <p>Dificultad:</p>
+                <div class="difficulty-buttons" id="word-guess-difficulty-setting">
+                    <button class="difficulty-btn" data-level="easy">Fácil</button>
+                    <button class="difficulty-btn" data-level="medium">Medio</button>
+                    <button class="difficulty-btn" data-level="hard">Difícil</button>
+                </div>
+                <p style="margin-top: 1.5rem;">Tema de Palabras:</p>
+                <div class="difficulty-buttons" id="word-guess-theme-setting">
+                    <button class="difficulty-btn" data-theme="animals">Animales</button>
+                    <button class="difficulty-btn" data-theme="fruits">Frutas</button>
+                    <button class="difficulty-btn" data-theme="countries">Países</button>
                 </div>
             </div>
         </div>
