@@ -16,52 +16,26 @@
                 <span class="score-label">Puntos:</span>
                 <span id="score-value">0</span> 🪙
             </div>
-            <div class="lang-selector">
-                <button class="lang-btn active" data-lang="es">🇪🇸 ES</button>
-                <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+            <div class="header-controls">
+                <div class="lang-selector">
+                    <button class="lang-btn active" data-lang="es">🇪🇸 ES</button>
+                    <button class="lang-btn" data-lang="en">🇬🇧 EN</button>
+                </div>
+                <button id="settings-btn" class="settings-btn">⚙️</button>
             </div>
         </header>
 
         <main id="views-container">
 
             <div id="main-menu-view" class="view">
-                <h1 class="title">El Nuevo Juego de Valeria</h1>
-                <div class="game-selection-grid">
-                    <button class="game-card" data-game="math-challenge">
-                        <span class="game-icon">🧮</span>
-                        <span class="game-title">Reto Matemático</span>
-                    </button>
-                    <button class="game-card disabled" data-game="guess-word">
-                        <span class="game-icon">📝</span>
-                        <span class="game-title">Adivina la Palabra</span>
-                        <span class="game-status">(Próximamente)</span>
-                    </button>
-                    <button class="game-card disabled" data-game="fill-sentence">
-                        <span class="game-icon">✍️</span>
-                        <span class="game-title">Completa la Frase</span>
-                        <span class="game-status">(Próximamente)</span>
-                    </button>
-                     <button class="game-card disabled" data-game="what-am-i">
-                        <span class="game-icon">🖼️</span>
-                        <span class="game-title">¿Qué Soy? (Visual)</span>
-                        <span class="game-status">(Próximamente)</span>
-                    </button>
                 </div>
-            </div>
 
             <div id="math-challenge-view" class="view hidden">
                  <button class="back-button">&larr; Volver al menú</button>
                  <h2>🧮 Reto Matemático</h2>
-                 <div id="math-level-selection">
-                    <p>Selecciona la dificultad:</p>
-                    <div class="difficulty-buttons">
-                        <button class="difficulty-btn" data-level="easy">Fácil</button>
-                        <button class="difficulty-btn" data-level="medium">Medio</button>
-                        <button class="difficulty-btn" data-level="hard">Difícil</button>
-                    </div>
-                 </div>
-
-                 <div id="math-game-area" class="hidden">
+                 <p class="difficulty-display">Dificultad actual: <span id="current-math-level">Fácil</span></p>
+                 
+                 <div id="math-game-area">
                     <div class="math-problem-box">
                         <span id="math-problem-text"></span>
                     </div>
@@ -72,6 +46,28 @@
             </div>
 
         </main>
+    </div>
+
+    <div id="settings-view" class="view modal hidden">
+        <div class="modal-content">
+            <button class="close-button">&times;</button>
+            <h2>⚙️ Ajustes del Juego</h2>
+            
+            <div class="settings-section">
+                <h3>Reto Matemático</h3>
+                <p>Selecciona la dificultad:</p>
+                <div class="difficulty-buttons" id="math-level-setting">
+                    <button class="difficulty-btn" data-level="easy">Fácil</button>
+                    <button class="difficulty-btn" data-level="medium">Medio</button>
+                    <button class="difficulty-btn" data-level="hard">Difícil</button>
+                </div>
+            </div>
+
+            <div class="settings-section disabled">
+                <h3>Juegos de Palabras</h3>
+                <p>(Ajustes disponibles próximamente)</p>
+            </div>
+        </div>
     </div>
     <script src="script.js"></script>
 </body>
