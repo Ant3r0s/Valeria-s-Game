@@ -10,11 +10,14 @@ document.addEventListener('DOMContentLoaded', () => {
         avatar: { items: [] },
     };
 
+    // Base de datos de la tienda - ¡Nuevos Items!
     const shopItems = [
         { id: 'hat_1', name: 'Gorra', price: 50, icon: '🧢', type: 'hat' },
         { id: 'glasses_1', name: 'Gafas de Sol', price: 75, icon: '😎', type: 'glasses' },
-        { id: 'mustache_1', name: 'Bigote', price: 100, icon: '👨🏻', type: 'feature' },
+        { id: 'mustache_1', name: 'Bigote', price: 100, icon: '〰️', type: 'feature' }, // Usamos un icono más adecuado
         { id: 'crown_1', name: 'Corona', price: 500, icon: '👑', type: 'hat' },
+        { id: 'shirt_1', name: 'Camiseta', price: 120, icon: '👕', type: 'shirt' },
+        { id: 'shoes_1', name: 'Zapatillas', price: 90, icon: '👟', type: 'shoes' },
     ];
 
     // --- REFERENCIAS A ELEMENTOS DEL DOM ---
@@ -24,6 +27,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const gameCards = document.querySelectorAll('#main-menu-view .game-card');
     const backButtons = document.querySelectorAll('.back-button');
     const avatarPreviewHeader = document.getElementById('avatar-preview-header');
+    const avatarPreviewMath = document.getElementById('avatar-preview-math'); // Nuevo: avatar en el juego de mates
     
     const settingsBtn = document.getElementById('settings-btn');
     const settingsView = document.getElementById('settings-view');
@@ -106,7 +110,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- LÓGICA DE LA TIENDA Y AVATAR ---
-    // (Sin cambios, es la misma lógica que ya funcionaba)
     function renderShop() {
         shopItemsGrid.innerHTML = '';
         shopItems.forEach(item => {
@@ -138,8 +141,11 @@ document.addEventListener('DOMContentLoaded', () => {
         gameState.avatar.items.push(itemId);
         saveState();
         renderShop();
-        renderAvatar();
+        renderAvatar(); // Actualizar avatar en el header
+        renderAvatarInGame(); // Actualizar avatar en el juego de mates (si está visible)
     }
+
+    // Renderiza el avatar en la cabecera (pequeño)
     function renderAvatar() {
         avatarPreviewHeader.querySelectorAll('.avatar-item-preview').forEach(el => el.remove());
         gameState.avatar.items.forEach(itemId => {
@@ -147,9 +153,24 @@ document.addEventListener('DOMContentLoaded', () => {
             if (item) {
                 const itemEl = document.createElement('div');
                 itemEl.className = `avatar-item-preview item-${item.type}`;
-                itemEl.textContent = (item.id === 'mustache_1') ? '〰️' : item.icon;
-                if (item.id === 'mustache_1') itemEl.style.fontSize = '1.2rem';
+                itemEl.textContent = item.icon; // Usamos el icono directamente
                 avatarPreviewHeader.appendChild(itemEl);
+            }
+        });
+    }
+
+    // Renderiza el avatar en el área de juego (más grande)
+    function renderAvatarInGame() {
+        // Limpiar items anteriores (excepto la base)
+        avatarPreviewMath.querySelectorAll('.avatar-item-preview').forEach(el => el.remove());
+        
+        gameState.avatar.items.forEach(itemId => {
+            const item = shopItems.find(i => i.id === itemId);
+            if (item) {
+                const itemEl = document.createElement('div');
+                itemEl.className = `avatar-item-preview item-${item.type}`; // Clases de tipo para CSS
+                itemEl.textContent = item.icon;
+                avatarPreviewMath.appendChild(itemEl);
             }
         });
     }
@@ -164,15 +185,16 @@ document.addEventListener('DOMContentLoaded', () => {
         const savedState = localStorage.getItem('valeriaGameState');
         if (savedState) {
             const loadedState = JSON.parse(savedState);
-            // Hacemos un merge cuidadoso para no perder nuevas propiedades en el futuro
             gameState.score = loadedState.score || 0;
             gameState.language = loadedState.language || 'es';
-            gameState.theme = loadedState.theme || 'light'; // Cargar tema
-            if (loadedState.settings) gameState.settings = loadedState.settings;
+            gameState.theme = loadedState.theme || 'light';
+            if (loadedState.settings) {
+                if (loadedState.settings.math) gameState.settings.math = loadedState.settings.math;
+            }
             if (loadedState.avatar) gameState.avatar = loadedState.avatar;
         }
         updateUI();
-        applyTheme(); // Aplicar tema al cargar
+        applyTheme();
     }
     
     function updateUI() {
@@ -180,13 +202,18 @@ document.addEventListener('DOMContentLoaded', () => {
         langButtons.forEach(btn => {
             btn.classList.toggle('active', btn.dataset.lang === gameState.language);
         });
-        renderAvatar();
+        renderAvatar(); // Siempre renderizar el del header
+        // Si estamos en la vista de juego de mates, también renderizar el grande
+        if (!document.getElementById('math-challenge-view').classList.contains('hidden')) {
+            renderAvatarInGame();
+        }
     }
 
     // --- LÓGICA DEL JUEGO DE MATEMÁTICAS ---
     function startGameMath() {
         const level = gameState.settings.math.level;
         currentMathLevelEl.textContent = level.charAt(0).toUpperCase() + level.slice(1);
+        renderAvatarInGame(); // Asegurarnos de que el avatar se renderice al iniciar el juego
         generateMathProblem();
     }
     function generateMathProblem() {
@@ -209,6 +236,11 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     function checkMathAnswer() {
         const userAnswer = parseInt(mathAnswerInputEl.value);
+        if (isNaN(userAnswer)) { // Validar que la respuesta sea un número
+            mathFeedbackTextEl.textContent = '¡Introduce un número!';
+            mathFeedbackTextEl.className = 'feedback-text incorrect';
+            return;
+        }
         if (userAnswer === currentMathAnswer) {
             mathFeedbackTextEl.textContent = '¡Correcto!';
             mathFeedbackTextEl.className = 'feedback-text correct';
