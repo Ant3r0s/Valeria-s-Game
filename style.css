@@ -60,3 +60,38 @@ body { margin: 0; font-family: var(--font-family); background-color: var(--bg-co
 .buy-btn { padding: 0.5rem 1rem; border: none; border-radius: 8px; font-weight: 600; font-family: var(--font-family); cursor: pointer; background-color: var(--secondary-green); color: #fff; width: 100%; }
 .buy-btn:hover:not(:disabled) { background-color: #27ae60; }
 .buy-btn:disabled { background-color: #bdc3c7; cursor: not-allowed; }
+
+
+.avatar-preview-header {
+    position: relative; /* Contenedor padre para posicionar los items */
+    width: 60px;
+    height: 60px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.avatar-base {
+    font-size: 3rem;
+}
+
+.avatar-item-preview {
+    position: absolute; /* Cada item es una capa flotante */
+    font-size: 1.5rem;
+    pointer-events: none; /* Para que no interfieran con clics */
+}
+
+/* --- Posiciones específicas para cada tipo de item --- */
+
+.item-hat {
+    top: -10px; /* Un poco por encima de la cabeza */
+    font-size: 2rem;
+}
+
+.item-glasses {
+    top: 15px; /* Justo a la altura de los ojos */
+}
+
+.item-feature { /* Para bigotes, etc. */
+    top: 28px; /* Debajo de la nariz */
+}
