@@ -1,73 +1,31 @@
 :root {
-    --bg-color: #f0f4f8;
-    --card-bg: #ffffff;
-    --text-color: #333;
-    --header-text: #000;
-    --light-gray: #ecf0f1;
-    --primary-blue: #3498db;
-    --secondary-green: #2ecc71;
-    --red-error: #e74c3c;
-    --font-family: 'Poppins', sans-serif;
-    --shadow-color: rgba(0,0,0,0.1);
+    --bg-color: #f0f4f8; --card-bg: #ffffff; --text-color: #333; --header-text: #000;
+    --light-gray: #ecf0f1; --primary-blue: #3498db; --secondary-green: #2ecc71;
+    --red-error: #e74c3c; --font-family: 'Poppins', sans-serif; --shadow-color: rgba(0,0,0,0.1);
 }
-
 body.dark-mode {
-    --bg-color: #1a202c;
-    --card-bg: #2d3748;
-    --text-color: #e2e8f0;
-    --header-text: #fff;
-    --light-gray: #4a5568;
-    --shadow-color: rgba(0,0,0,0.4);
+    --bg-color: #1a202c; --card-bg: #2d3748; --text-color: #e2e8f0; --header-text: #fff;
+    --light-gray: #4a5568; --shadow-color: rgba(0,0,0,0.4);
 }
-
-body {
-    margin: 0;
-    font-family: var(--font-family);
-    background-color: var(--bg-color);
-    color: var(--text-color);
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
-    transition: background-color 0.3s, color 0.3s;
-}
-
+body { margin: 0; font-family: var(--font-family); background-color: var(--bg-color); color: var(--text-color); display: flex; justify-content: center; align-items: center; min-height: 100vh; transition: background-color 0.3s, color 0.3s; }
 .hidden { display: none !important; }
-
-.app-container {
-    width: 100%; max-width: 800px; height: 95vh; max-height: 800px;
-    background-color: var(--card-bg);
-    border-radius: 20px; box-shadow: 0 10px 30px var(--shadow-color);
-    display: flex; flex-direction: column; overflow: hidden;
-    transition: background-color 0.3s;
-}
-
-.app-header {
-    display: flex; justify-content: space-between; align-items: center;
-    padding: 1rem 1.5rem; background-color: var(--card-bg);
-    border-bottom: 2px solid var(--light-gray);
-    transition: background-color 0.3s, border-color 0.3s;
-}
-
+.app-container { width: 100%; max-width: 800px; height: 95vh; max-height: 800px; background-color: var(--card-bg); border-radius: 20px; box-shadow: 0 10px 30px var(--shadow-color); display: flex; flex-direction: column; overflow: hidden; transition: background-color 0.3s; }
+.app-header { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.5rem; background-color: var(--card-bg); border-bottom: 2px solid var(--light-gray); transition: background-color 0.3s, border-color 0.3s; }
 .score-display { font-size: 1.2rem; font-weight: 600; color: var(--header-text); }
 #score-value { color: var(--primary-blue); }
-
-.avatar-preview-header { position: relative; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; }
-.avatar-base { font-size: 3rem; }
-.avatar-item-preview { position: absolute; font-size: 1.5rem; }
+/* AVATAR EN CABECERA */
+.avatar-preview-header { position: relative; width: 60px; height: 60px; display: flex; justify-content: center; align-items: center; margin-left: 1rem; margin-right: 1rem; }
+.avatar-preview-header .avatar-base { font-size: 3rem; }
+.avatar-preview-header .avatar-item-preview { position: absolute; font-size: 1.5rem; pointer-events: none; }
 
 .header-controls { display: flex; align-items: center; gap: 1rem; }
 .lang-selector { display: flex; border: 2px solid var(--light-gray); border-radius: 10px; overflow: hidden; }
 .lang-btn { padding: 0.5rem; border: none; background: none; cursor: pointer; font-family: var(--font-family); font-weight: 600; color: var(--text-color); }
 .lang-btn.active, .lang-btn:hover { background-color: var(--primary-blue); color: #fff; }
-
 .header-icon-btn { font-size: 1.8rem; background: none; border: none; cursor: pointer; color: var(--text-color); padding: 0; line-height: 1; transition: transform 0.2s ease; }
 .header-icon-btn:hover { transform: rotate(45deg); }
-
 #views-container { flex-grow: 1; padding: 2rem; overflow-y: auto; position: relative; }
 .view { position: relative; }
-
-/* ... (el resto de estilos como game-card, math-challenge, etc. se mantienen igual pero usando las variables) ... */
 .back-button { position: absolute; top: -1rem; left: 0; background: none; border: none; font-size: 1rem; cursor: pointer; color: var(--primary-blue); font-weight: 600; }
 .title { text-align: center; margin-top: 0; }
 .game-selection-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; }
@@ -83,6 +41,21 @@ body.dark-mode .game-card.disabled:hover { background-color: #3b4454; color: #a0
 #math-challenge-view h2, #shop-view h2 { text-align: center; }
 .difficulty-display { text-align: center; font-size: 1.1rem; margin-top: -1rem; margin-bottom: 2rem; }
 #current-math-level { font-weight: bold; color: var(--primary-blue); }
+
+/* AVATAR EN EL JUEGO DE MATES */
+.avatar-preview-math {
+    position: relative; /* Contenedor padre */
+    width: 100px; /* Tamaño más grande para el juego */
+    height: 100px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 2rem auto; /* Centrar y margen inferior */
+}
+.avatar-preview-math .avatar-base { font-size: 5rem; } /* Base más grande */
+.avatar-preview-math .avatar-item-preview { position: absolute; pointer-events: none; }
+
+
 #math-game-area { text-align: center; }
 .math-problem-box { background-color: var(--light-gray); padding: 2rem; border-radius: 10px; font-size: 2.5rem; font-weight: 700; margin-bottom: 1.5rem; }
 #math-answer-input { width: 100%; max-width: 300px; padding: 1rem; font-size: 1.5rem; text-align: center; border: 2px solid var(--light-gray); border-radius: 10px; margin-bottom: 1.5rem; background-color: var(--card-bg); color: var(--text-color); }
@@ -110,9 +83,23 @@ body.dark-mode .game-card.disabled:hover { background-color: #3b4454; color: #a0
 .setting-item { display: flex; justify-content: space-between; align-items: center; }
 .theme-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
 .theme-switch input { opacity: 0; width: 0; height: 0; }
-.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; }
-.slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; }
+.slider { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px; }
+.slider:before { position: absolute; content: ""; height: 26px; width: 26px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%; }
 input:checked + .slider { background-color: var(--primary-blue); }
-.slider.round { border-radius: 34px; }
-.slider.round:before { border-radius: 50%; }
 input:checked + .slider:before { transform: translateX(26px); }
+
+/* --- Posiciones específicas para cada tipo de item (tamaño normal y grande) --- */
+.avatar-item-preview.item-hat { top: -10px; font-size: 2.5rem; }
+.avatar-preview-math .avatar-item-preview.item-hat { top: -20px; font-size: 4rem; }
+
+.avatar-item-preview.item-glasses { top: 15px; font-size: 1.5rem; }
+.avatar-preview-math .avatar-item-preview.item-glasses { top: 25px; font-size: 2.5rem; }
+
+.avatar-item-preview.item-feature { top: 28px; font-size: 1.2rem; }
+.avatar-preview-math .avatar-item-preview.item-feature { top: 45px; font-size: 2rem; }
+
+.avatar-item-preview.item-shirt { top: 40px; font-size: 2.5rem; } /* Ejemplo: camiseta */
+.avatar-preview-math .avatar-item-preview.item-shirt { top: 60px; font-size: 4rem; }
+
+.avatar-item-preview.item-shoes { top: 55px; font-size: 1.5rem; } /* Ejemplo: zapatos */
+.avatar-preview-math .avatar-item-preview.item-shoes { top: 85px; font-size: 2.5rem; }
