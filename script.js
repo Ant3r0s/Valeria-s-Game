@@ -52,7 +52,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const lang = state.gameState.language;
             document.querySelectorAll('[data-i18n-key]').forEach(el => {
                 const key = el.dataset.i18nKey;
-                const targetEl = el.querySelector('span') || el;
+                const targetEl = (el.tagName === 'BUTTON' || el.tagName === 'SPAN') ? el : el.querySelector('span') || el;
                 if (state.uiStrings[lang][key]) targetEl.innerHTML = state.uiStrings[lang][key];
             });
         }
@@ -107,18 +107,42 @@ document.addEventListener('DOMContentLoaded', () => {
         applyTheme() { document.body.classList.toggle('dark-mode', state.gameState.theme === 'dark'); },
         setMathLevel(level) { state.gameState.settings.math.level = level; persistence.save(); this.updateUI(); },
         toggleDarkMode() { state.gameState.theme = this.elements.darkModeToggle.checked ? 'dark' : 'light'; this.applyTheme(); persistence.save(); },
-        setLanguage(lang) { state.gameState.language = lang; this.updateLangUI(); ui.updateTexts(); persistence.save(); },
+        setLanguage(lang) {
+            state.gameState.language = lang;
+            this.updateLangUI();
+            ui.updateTexts();
+            persistence.save();
+
+            const guessWordView = document.getElementById('guess-word-view');
+            if (!guessWordView.classList.contains('hidden')) {
+                guessWordGame.start();
+            }
+        },
         updateLangUI() { this.elements.langButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.lang === state.gameState.language)); }
     };
 
     const guessWordGame = {
-        init() { this.elements = { attempts: document.getElementById('guess-word-attempts'), definition: document.getElementById('guess-word-definition'), boxes: document.getElementById('guess-word-boxes'), keyboard: document.getElementById('keyboard-container') }; this.renderKeyboard(); },
+        init() {
+            this.elements = {
+                attempts: document.getElementById('guess-word-attempts'),
+                definition: document.getElementById('guess-word-definition'),
+                boxes: document.getElementById('guess-word-boxes'),
+                keyboard: document.getElementById('keyboard-container')
+            };
+            this.renderKeyboard();
+        },
         async start() {
             this.elements.definition.innerHTML = '<p>Contactando con la IA...</p>';
             this.elements.keyboard.querySelectorAll('.key').forEach(k => k.disabled = false);
             if (!state.textGenerator) {
                 this.elements.definition.innerHTML = '<p>Cargando IA de lenguaje (sólo la primera vez)...</p>';
-                state.textGenerator = await pipeline('text-generation', 'Xenova/distilgpt2');
+                try {
+                    state.textGenerator = await pipeline('text-generation', 'Xenova/distilgpt2');
+                } catch (error) {
+                    console.error("Error al cargar el modelo de IA:", error);
+                    this.elements.definition.textContent = 'Error: No se pudo cargar el modelo de IA.';
+                    return;
+                }
             }
             const { level, theme } = state.gameState.settings.guessWord;
             const lang = state.gameState.language === 'es' ? 'Spanish' : 'English';
@@ -130,25 +154,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 const result = await state.textGenerator(prompt, { max_new_tokens: 50 });
                 const rawText = result[0].generated_text;
                 const parts = rawText.split('###');
-                const lastPart = parts[parts.length - 1].trim();
-                const definitionMatch = lastPart.match(/Definition:(.*?)\nWord:(.*)/s);
-
+                const lastValidPart = parts[parts.length - 1].trim();
+                const definitionMatch = lastValidPart.match(/Definition:(.*?)\nWord:(.*)/s);
                 if (!definitionMatch || !definitionMatch[2]) throw new Error("La IA no devolvió un formato válido.");
-                
-                const word = definitionMatch[2].trim().toUpperCase().replace(/[^A-Z]/g, '');
                 const definition = definitionMatch[1].trim();
-
+                const word = definitionMatch[2].trim().toUpperCase().replace(/[^A-Z]/g, '');
                 if (word.length === 0) throw new Error("La IA generó una palabra vacía.");
-
                 state.guessWordState = { word, guessedLetters: new Set(), attempts: 6 };
                 this.elements.definition.textContent = definition;
                 this.renderBoxes();
                 this.updateAttempts();
-            } catch (error) { console.error("Error de la IA:", error); this.elements.definition.textContent = 'Error de la IA. Inténtalo de nuevo.'; }
+            } catch (error) { console.error("Error de la IA:", error); this.elements.definition.textContent = 'Error de la IA. Generando otra pregunta...'; setTimeout(() => this.start(), 2000); }
         },
         renderBoxes() { this.elements.boxes.innerHTML = ''; for (const letter of state.guessWordState.word) { const box = document.createElement('div'); box.className = 'letter-box'; if (state.guessWordState.guessedLetters.has(letter)) box.textContent = letter; this.elements.boxes.appendChild(box); } },
         renderKeyboard() { this.elements.keyboard.innerHTML = ''; 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').forEach(letter => { const key = document.createElement('button'); key.className = 'key'; key.textContent = letter; key.addEventListener('click', () => this.handleGuess(letter)); this.elements.keyboard.appendChild(key); }); },
-        handleGuess(letter) { if (state.guessWordState.attempts <= 0 || state.guessWordState.guessedLetters.has(letter)) return; state.guessWordState.guessedLetters.add(letter); this.elements.keyboard.querySelector(`button:nth-child(${letter.charCodeAt(0) - 64})`).disabled = true; if (state.guessWordState.word.includes(letter)) { this.renderBoxes(); } else { state.guessWordState.attempts--; this.updateAttempts(); } this.checkGameStatus(); },
+        handleGuess(letter) { if (!state.guessWordState.word || state.guessWordState.attempts <= 0 || state.guessWordState.guessedLetters.has(letter)) return; state.guessWordState.guessedLetters.add(letter); this.elements.keyboard.querySelectorAll('.key').forEach(key => { if (key.textContent === letter) key.disabled = true; }); if (state.guessWordState.word.includes(letter)) { this.renderBoxes(); } else { state.guessWordState.attempts--; this.updateAttempts(); } this.checkGameStatus(); },
         updateAttempts() { this.elements.attempts.textContent = state.guessWordState.attempts; },
         checkGameStatus() { const wordSolved = [...state.guessWordState.word].every(letter => state.guessWordState.guessedLetters.has(letter)); if (wordSolved) { this.elements.definition.textContent = `¡CORRECTO! La palabra era ${state.guessWordState.word}`; game.updateScore(25); this.elements.keyboard.querySelectorAll('.key').forEach(key => key.disabled = true); setTimeout(()=>this.start(), 2000); } else if (state.guessWordState.attempts <= 0) { this.elements.definition.textContent = `¡Has perdido! La palabra era ${state.guessWordState.word}`; this.elements.keyboard.querySelectorAll('.key').forEach(key => key.disabled = true); setTimeout(()=>this.start(), 2000); } }
     };
@@ -159,6 +179,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- CONTROLADOR PRINCIPAL DEL JUEGO ---
     const game = {
+        modules: {
+            'math-challenge-view': mathGame,
+            'guess-word-view': guessWordGame,
+            'shop-view': shop,
+            'closet-view': closet
+        },
         init() {
             persistence.load();
             ui.init();
@@ -167,15 +193,17 @@ document.addEventListener('DOMContentLoaded', () => {
             ui.showView('main-menu-view');
         },
         switchView(viewId) {
-            const moduleMap = { 'math-challenge-view': mathGame, 'guess-word-view': guessWordGame, 'shop-view': shop, 'closet-view': closet };
-            const module = moduleMap[viewId];
+            const module = this.modules[viewId];
             if (module) {
                 if (!module.isInitialized) {
                     module.init();
                     module.isInitialized = true;
                 }
-                if (typeof module.start === 'function') module.start();
-                else if (typeof module.render === 'function') module.render();
+                if (typeof module.start === 'function') {
+                    module.start();
+                } else if (typeof module.render === 'function') {
+                    module.render();
+                }
             }
             ui.showView(viewId);
         },
