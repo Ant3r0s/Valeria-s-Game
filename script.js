@@ -13,10 +13,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Base de datos de la tienda
     const shopItems = [
-        { id: 'hat_1', name: 'Gorra', price: 50, icon: '🧢' },
-        { id: 'glasses_1', name: 'Gafas de Sol', price: 75, icon: '😎' },
-        { id: 'mustache_1', name: 'Bigote', price: 100, icon: '👨🏻' }, // Usaremos CSS para aislar el bigote
-        { id: 'crown_1', name: 'Corona', price: 500, icon: '👑' },
+        { id: 'hat_1', name: 'Gorra', price: 50, icon: '🧢', type: 'hat' },
+        { id: 'glasses_1', name: 'Gafas de Sol', price: 75, icon: '😎', type: 'glasses' },
+        { id: 'mustache_1', name: 'Bigote', price: 100, icon: '👨🏻', type: 'feature' }, // Lo trataremos con CSS
+        { id: 'crown_1', name: 'Corona', price: 500, icon: '👑', type: 'hat' },
     ];
 
     // --- REFERENCIAS A ELEMENTOS DEL DOM ---
@@ -135,20 +135,27 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     function renderAvatar() {
-        // Limpiar items anteriores (excepto la base)
-        avatarPreviewHeader.querySelectorAll('.avatar-item-preview').forEach(el => el.remove());
-        
-        gameState.avatar.items.forEach(itemId => {
-            const item = shopItems.find(i => i.id === itemId);
-            if (item) {
-                const itemEl = document.createElement('div');
-                itemEl.className = 'avatar-item-preview';
-                itemEl.textContent = item.icon;
-                // Aquí se podrían añadir clases para posicionar cada item
-                avatarPreviewHeader.appendChild(itemEl);
+    // Limpiar items anteriores (excepto la base)
+    avatarPreviewHeader.querySelectorAll('.avatar-item-preview').forEach(el => el.remove());
+    
+    gameState.avatar.items.forEach(itemId => {
+        const item = shopItems.find(i => i.id === itemId);
+        if (item) {
+            const itemEl = document.createElement('div');
+            // Añadimos una clase general y una específica para el tipo de item
+            itemEl.className = `avatar-item-preview item-${item.type}`;
+            itemEl.textContent = item.icon;
+            
+            // Un pequeño truco para aislar el bigote del emoji 👨🏻
+            if (item.id === 'mustache_1') {
+                itemEl.textContent = '〰️'; // Usamos un bigote de texto o un SVG si quisiéramos
+                itemEl.style.fontSize = '1.2rem'; // Ajustamos tamaño
             }
-        });
-    }
+
+            avatarPreviewHeader.appendChild(itemEl);
+        }
+    });
+}
 
     // --- GUARDADO Y CARGA DE DATOS ---
     function saveState() {
